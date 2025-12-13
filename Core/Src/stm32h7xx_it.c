@@ -163,19 +163,15 @@ static int hardfault_flag_is_set(void){
   } while (0)    
   //Breakpoint in debug mode                                         
 
-
-volatile uint32_t real_fault_pc;
 __attribute__((noreturn,optimize("O0")))
 void my_fault_handler_c(sContextStateFrame *frame) {
-  // If and only if a debugger is attached, execute a breakpoint
-  // instruction so we can take a look at what triggered the fault
-  const uint32_t instr_pc = frame->return_address;
-  real_fault_pc = instr_pc & ~1; //clean bit 0, real direction
+  volatile uint32_t real_fault_pc = frame->return_address & ~1;
   volatile HardFaultLog log_hard_fault;
   volatile uint32_t *cfsr = (volatile uint32_t *)0xE000ED28;
   //keep the log in the estructure
   log_hard_fault.HF_flag = HF_FLAG_VALUE;
   log_hard_fault.frame = *frame;
+  log_hard_fault.frame.return_address = real_fault_pc; 
   log_hard_fault.CfsrDecode.cfsr = *cfsr;
   log_hard_fault.fault_address.Nothing_Valid = 0;
 
