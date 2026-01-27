@@ -97,7 +97,7 @@ extern uint32_t _hf_stack_end;
 
 //calls my_fault_handler with the MSP(main stack pointer)
 #define HARDFAULT_HANDLING_ASM()                 \
-__asm volatile(                                 \
+__asm__ __volatile__(                                 \
     /* Detect which stack was in use */         \
     "tst lr, #4                \n"              \
     "ite eq                    \n"              \
