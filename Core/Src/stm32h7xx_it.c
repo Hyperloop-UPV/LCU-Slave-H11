@@ -22,6 +22,7 @@
 #include "stm32h7xx_it.h"
 #include "stm32h7xx_hal.h"
 #include "HALAL/HardFault/HardfaultTrace.h"
+#include <string.h>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -147,7 +148,7 @@ void hardfault_flash_write(
         copy_len = (len_hard_fault - offset) > 32 ? 32 : (len_hard_fault - offset);
         memcpy(block, (uint8_t*)data_hard_fault + offset, copy_len);
 
-        if(HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, addr_hard_fault + offset, (uint32_t*)block) != HAL_OK){
+        if(HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, addr_hard_fault + offset, (uint32_t)block) != HAL_OK){
             __BKPT(0);
         }
         offset += 32;
@@ -159,7 +160,7 @@ void hardfault_flash_write(
         copy_len = (len_metadata - offset) > 32 ? 32 : (len_metadata - offset);
         memcpy(block, (uint8_t*)data_metadata + offset, copy_len);
 
-        if(HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, addr_metadata + offset, (uint32_t*)block) != HAL_OK){
+        if(HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, addr_metadata + offset, (uint32_t)block) != HAL_OK){
             __BKPT(0);
         }
         offset += 32;

@@ -6,6 +6,8 @@ set(EXECUTABLE ${PROJECT_NAME}.elf)
 set(Board "VCU") # User must change the Board name
 set(STLIB_DIR ${CMAKE_CURRENT_LIST_DIR}/deps/ST-LIB)
 set(LD_SCRIPT  ${STLIB_DIR}/STM32H723ZGTX_FLASH.ld)
+set(CONTROL_DIR ${CMAKE_CURRENT_LIST_DIR}/deps/LCU-Control-H11)
+set(SHARED_DIR  ${CMAKE_CURRENT_LIST_DIR}/deps/LCU-Shared-H11)
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
@@ -103,7 +105,6 @@ target_compile_options(${EXECUTABLE} PRIVATE
   $<$<COMPILE_LANGUAGE:C>:-w>
 
   $<$<COMPILE_LANGUAGE:CXX>:-Wall>
-  $<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>
   $<$<COMPILE_LANGUAGE:CXX>:-Werror>
   $<$<COMPILE_LANGUAGE:CXX>:-fno-use-cxa-atexit>
   $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
@@ -111,6 +112,8 @@ target_compile_options(${EXECUTABLE} PRIVATE
 
 target_include_directories(${EXECUTABLE} PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc
+  ${CONTROL_DIR}
+  ${SHARED_DIR}
 )
 
 target_link_options(${EXECUTABLE} PRIVATE 
