@@ -1,9 +1,17 @@
 #ifndef LPU_HPP
 #define LPU_HPP
 
-class LPU {
+#include "LPUShared.hpp"
+
+class LPU : public LPUBase {
    public:
-    // LPU class methods and
+    void initImpl() {
+        // Initialization code specific to LPU
+    }
+
+    void updateImpl() {
+        // Update code specific to LPU
+    }
 };
 
 #endif // LPU_HPP

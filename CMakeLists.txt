@@ -113,7 +113,8 @@ target_compile_options(${EXECUTABLE} PRIVATE
 target_include_directories(${EXECUTABLE} PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc
   ${CONTROL_DIR}
-  ${SHARED_DIR}
+  ${SHARED_DIR}/Inc
+  ${STLIB_DIR}/Inc
 )
 
 target_link_options(${EXECUTABLE} PRIVATE 
