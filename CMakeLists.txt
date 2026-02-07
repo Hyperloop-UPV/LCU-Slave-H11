@@ -71,78 +71,6 @@ file(GLOB_RECURSE SOURCE_HPP  ${CMAKE_SOURCE_DIR}/Core/*.hpp)
 file(GLOB CONTROL_C ${CONTROL_DIR}/STM32H7CodeGenerator/*.c)
 file(GLOB CONTROL_H ${CONTROL_DIR}/STM32H7CodeGenerator/*.h)
 
-add_executable(${EXECUTABLE}
-  ${SOURCE_C}
-  ${SOURCE_CPP}
-  ${SOURCE_H}
-  ${SOURCE_HPP}
-  ${CONTROL_C}
-  ${CONTROL_H}
-
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:${STLIB_DIR}/startup_stm32h723zgtx.s>
-)
-
-target_link_libraries(${EXECUTABLE} PRIVATE
-  ${STLIB_LIBRARY}
-)
-
-set_target_properties(${EXECUTABLE} PROPERTIES
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED YES
-  C_STANDARD 17
-  C_STANDARD_REQUIRED YES
-)
-
-target_compile_definitions(${EXECUTABLE} PRIVATE
-  $<$<BOOL:${USE_ETHERNET}>:STLIB_ETH>
-  $<IF:$<BOOL:${TARGET_NUCLEO}>,NUCLEO,BOARD>
-  $<IF:$<BOOL:${TARGET_NUCLEO}>,HSE_VALUE=8000000,HSE_VALUE=25000000>
-)
-
-target_compile_options(${EXECUTABLE} PRIVATE
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-mcpu=cortex-m7>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-mfpu=fpv5-d16>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-mfloat-abi=hard>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-mthumb>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-specs=nosys.specs>
-  -g
-  -ffunction-sections
-  -fdata-sections
-  -fno-exceptions
-
-  -Wno-psabi
-
-  $<$<COMPILE_LANGUAGE:C>:-w>
-
-  $<$<COMPILE_LANGUAGE:CXX>:-Wall>
-  $<$<COMPILE_LANGUAGE:CXX>:-Werror>
-  $<$<COMPILE_LANGUAGE:CXX>:-fno-use-cxa-atexit>
-  $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
-)
-
-target_include_directories(${EXECUTABLE} PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc
-  ${CONTROL_DIR}/STM32H7CodeGenerator
-  ${SHARED_DIR}/Inc
-  ${STLIB_DIR}/Inc
-)
-
-target_link_options(${EXECUTABLE} PRIVATE 
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-T${LD_SCRIPT}>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-mcpu=cortex-m7>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-mthumb>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-mfpu=fpv5-d16>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-mfloat-abi=hard>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-specs=nosys.specs>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-lc>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-lm>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-lnosys>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-Wl,-Map=${PROJECT_NAME}.map,--cref>
-  $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-Wl,--gc-sections>
-)
-
-add_custom_target(generate_binary_metadata ALL
-  COMMAND ${VENV_PYTHON} ${CMAKE_SOURCE_DIR}/tools/generate_binary_metadata.py
 file(GLOB_RECURSE GENERATOR_JSONS
   ${CMAKE_SOURCE_DIR}/Core/Inc/Code_generation/JSON_ADE/*.json
 )
@@ -215,6 +143,8 @@ if(CMAKE_CROSSCOMPILING)
     ${SOURCE_CPP}
     ${SOURCE_H}
     ${SOURCE_HPP}
+    ${CONTROL_C}
+    ${CONTROL_H}
 
     $<$<BOOL:${CMAKE_CROSSCOMPILING}>:${STLIB_DIR}/startup_stm32h723zgtx.s>
   )
@@ -261,6 +191,8 @@ if(CMAKE_CROSSCOMPILING)
 
   target_include_directories(${EXECUTABLE} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc
+    ${SHARED_DIR}/Inc
+    ${CONTROL_DIR}/STM32H7CodeGenerator
   )
 
   target_link_options(${EXECUTABLE} PRIVATE
