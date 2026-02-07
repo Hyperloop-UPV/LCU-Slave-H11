@@ -87,7 +87,7 @@ namespace Pinout {
     auto &airgap_8 = PC4;
 
     /* SPI */
-    auto spi_inst = /* TODO */;
+    // auto spi_inst = /* TODO */;
     auto &spi_sck = ST_LIB::PC10;
     auto &spi_miso = ST_LIB::PC11;
     auto &spi_mosi = ST_LIB::PC12;

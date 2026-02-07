@@ -17,19 +17,19 @@ ADC_HandleTypeDef hadc3;
 LPTIM_HandleTypeDef hlptim1;
 LPTIM_HandleTypeDef hlptim2;
 LPTIM_HandleTypeDef hlptim3;
-TIM_HandleTypeDef htim1;
-TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim4;
-TIM_HandleTypeDef htim5;
-TIM_HandleTypeDef htim7;
-TIM_HandleTypeDef htim8;
-TIM_HandleTypeDef htim12;
-TIM_HandleTypeDef htim16;
-TIM_HandleTypeDef htim17;
-TIM_HandleTypeDef htim15;
-TIM_HandleTypeDef htim23;
-TIM_HandleTypeDef htim24;
+// TIM_HandleTypeDef htim1;
+// TIM_HandleTypeDef htim2;
+// TIM_HandleTypeDef htim3;
+// TIM_HandleTypeDef htim4;
+// TIM_HandleTypeDef htim5;
+// TIM_HandleTypeDef htim7;
+// TIM_HandleTypeDef htim8;
+// TIM_HandleTypeDef htim12;
+// TIM_HandleTypeDef htim16;
+// TIM_HandleTypeDef htim17;
+// TIM_HandleTypeDef htim15;
+// TIM_HandleTypeDef htim23;
+// TIM_HandleTypeDef htim24;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
@@ -121,18 +121,7 @@ uint8_t UART::printf_uart = 0;
 bool UART::printf_ready = false;
 
 #endif
-/************************************************
- *                 	  Encoder
- ***********************************************/
-#ifdef HAL_TIM_MODULE_ENABLED
-#define BASE TimerPeripheral::TIM_TYPE::BASE
 
-TimerPeripheral encoder_timer(&htim8, {BASE, 0, 65535}, "TIM 8");
-
-map<pair<Pin, Pin>, TimerPeripheral*> Encoder::pin_timer_map = {
-    {{PC6, PC7}, &encoder_timer}};
-
-#endif
 /************************************************
  *                     Timer
  ***********************************************/

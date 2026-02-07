@@ -1,6 +1,7 @@
 #ifndef CONTROL_HPP
 #define CONTROL_HPP
 
+#include "C++Utilities/CppImports.hpp"
 #include "control.h"
 
 namespace Control {
