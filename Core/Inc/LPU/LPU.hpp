@@ -4,7 +4,6 @@
 #include "C++Utilities/CppImports.hpp"
 #include "LPUShared.hpp"
 #include "HALAL/Services/PWM/PWM.hpp"
-#include "ST-LIB_LOW/DigitalOutput/DigitalOutput.hpp"
 #include "ST-LIB_LOW/Sensors/LinearSensor/LinearSensor.hpp"
 
 template <typename PWMPositive, typename PWMNegative>

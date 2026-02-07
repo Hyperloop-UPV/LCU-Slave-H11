@@ -1,6 +1,7 @@
 #include "main.h"
 #include "ST-LIB.hpp"
 #include "LPU/LPU.hpp"
+#include "Airgap/Airgap.hpp"
 #include "ConfigShared.hpp"
 #include "Pinout/Pinout.hpp"
 
@@ -30,10 +31,12 @@ int main(void) {
     0.0f, 1.0f, 0.0f, 1.0f
   );
 
+  [[maybe_unused]] auto my_airgap = Airgap(Pinout::airgap_1, 0.0f, 1.0f);
+
   [[maybe_unused]] auto lpu_array = LpuArray(std::tie(my_lpu), std::tie(Pinout::en_buff_1));
 
   // Initialize frame with same array for both TX and RX
-  frame::init(my_lpu, my_lpu);
+  frame::init(my_lpu, my_airgap, my_lpu);
 
   while (1) {
     STLIB::update();
