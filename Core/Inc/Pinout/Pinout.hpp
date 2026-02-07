@@ -15,12 +15,11 @@ namespace Pinout {
     auto &slave_fault = ST_LIB::PE1;
 
     /* EN_BUFF (Digital Output) */
-    auto &en_buff_1 = PG7;
-    auto &en_buff_2 = PG6;
-    auto &en_buff_3 = PG5;
-    auto &en_buff_4 = PG4;
-    auto &en_buff_5 = PB2;
-
+    auto &en_buff_1 = ST_LIB::PG7;
+    auto &en_buff_2 = ST_LIB::PG6;
+    auto &en_buff_3 = ST_LIB::PG5;
+    auto &en_buff_4 = ST_LIB::PG4;
+    auto &en_buff_5 = ST_LIB::PB2;
     /* PWM (Timer) */
     auto &pwm1_1 = ST_LIB::PE5;
     auto &pwm1_2 = ST_LIB::PE6;
