@@ -2,25 +2,27 @@
 #define CONTROL_HPP
 
 #include "C++Utilities/CppImports.hpp"
-#include "control.h"
+
+extern "C" {
+    #include "control.h"
+}
 
 namespace Control {
-   public:
     void init() {
         control_initialize();
     }
 
-    void current_update() { // 2 kHz for now at least
-        control_U.corriente_real = /* set current value */;
+    float current_update(float measured_current) { // 2 kHz for now at least
+        control_U.corriente_real = measured_current;
 
         control_step0();
 
-        control_Y.Voltage; // Use output
+        return control_Y.Voltage; // Use output
     }
 
-    void levitation_update() { // 1 kHz for now at least
-        control_U.Gap = /* set gap value */;
-        control_U.Referencia = /* set reference value */;
+    void levitation_update(float gap, float reference) { // 1 kHz for now at least
+        control_U.Gap = gap;
+        control_U.Referencia = reference;
 
         control_step1();
     }

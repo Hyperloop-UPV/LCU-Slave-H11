@@ -63,11 +63,17 @@ file(GLOB_RECURSE SOURCE_CPP  ${CMAKE_SOURCE_DIR}/Core/*.cpp)
 file(GLOB_RECURSE SOURCE_H    ${CMAKE_SOURCE_DIR}/Core/*.h)
 file(GLOB_RECURSE SOURCE_HPP  ${CMAKE_SOURCE_DIR}/Core/*.hpp)
 
+# Add Simulink-generated control code
+file(GLOB CONTROL_C ${CONTROL_DIR}/STM32H7CodeGenerator/*.c)
+file(GLOB CONTROL_H ${CONTROL_DIR}/STM32H7CodeGenerator/*.h)
+
 add_executable(${EXECUTABLE}
   ${SOURCE_C}
   ${SOURCE_CPP}
   ${SOURCE_H}
   ${SOURCE_HPP}
+  ${CONTROL_C}
+  ${CONTROL_H}
 
   $<$<BOOL:${CMAKE_CROSSCOMPILING}>:${STLIB_DIR}/startup_stm32h723zgtx.s>
 )
@@ -112,7 +118,7 @@ target_compile_options(${EXECUTABLE} PRIVATE
 
 target_include_directories(${EXECUTABLE} PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc
-  ${CONTROL_DIR}
+  ${CONTROL_DIR}/STM32H7CodeGenerator
   ${SHARED_DIR}/Inc
   ${STLIB_DIR}/Inc
 )
