@@ -21,8 +21,6 @@ boards = Generate_PacketDescription(JSONpath, board)
 if __name__ == "__main__":
     Generate_DataPackets_hpp(board)
     Generate_OrderPackets_hpp(board)
-    # Generate_Protections_hpp(board), no protections for now
-
 
 
 
