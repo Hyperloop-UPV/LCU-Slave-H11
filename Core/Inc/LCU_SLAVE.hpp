@@ -23,7 +23,6 @@ namespace LCU_Slave {
     // Initialization
     // ============================================
     inline void init() {
-        STLIB::start();
         Board::init();
 
         // Create timer wrapper on stack
@@ -54,6 +53,8 @@ namespace LCU_Slave {
         g_lpu = &my_lpu;
         g_airgap = &my_airgap_inst;
         g_lpu_array = &lpu_array;
+
+        STLIB::start();
 
         // Initialize communications
         Communications::init();

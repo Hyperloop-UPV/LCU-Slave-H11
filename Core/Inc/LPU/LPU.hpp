@@ -12,9 +12,10 @@ class LPU : public LPUBase {
     LPU(PWMPositive& pwm_positive, PWMNegative& pwm_negative,
         Pin &shunt_pin, Pin &vbat_pin, float vbat_offset, float vbat_slope, float shunt_offset, float shunt_slope) :
             pwm_positive(pwm_positive),
-            pwm_negative(pwm_negative) {
-        vbat_sensor = new LinearSensor<float>(vbat_pin, vbat_slope, vbat_offset, &vbat_v);
-        shunt_sensor = new LinearSensor<float>(shunt_pin, shunt_slope, shunt_offset, &shunt_v);
+            pwm_negative(pwm_negative),
+            vbat_sensor(vbat_pin, vbat_slope, vbat_offset, &vbat_v),
+            shunt_sensor(shunt_pin, shunt_slope, shunt_offset, &shunt_v) {
+
     }
 
     void update() {
@@ -35,8 +36,8 @@ class LPU : public LPUBase {
                 return;
             }
         }
-        vbat_sensor->read();
-        shunt_sensor->read();
+        vbat_sensor.read();
+        shunt_sensor.read();
     }
 
     /**
@@ -93,21 +94,21 @@ class LPU : public LPUBase {
         constexpr size_t sample_count = 1000;
 
         for (std::size_t i = 0; i < sample_count; i++) {
-            vbat_sensor->read();
-            shunt_sensor->read();
+            vbat_sensor.read();
+            shunt_sensor.read();
             vbat_sum += vbat_v;
             shunt_sum += shunt_v;
         }
 
-        vbat_sensor->set_offset(vbat_sum / sample_count);
-        shunt_sensor->set_offset(shunt_sum / sample_count);
+        vbat_sensor.set_offset(vbat_sum / sample_count);
+        shunt_sensor.set_offset(shunt_sum / sample_count);
     }
 
    private:
     PWMPositive& pwm_positive;
     PWMNegative& pwm_negative;
-    LinearSensor <float> *vbat_sensor;
-    LinearSensor <float> *shunt_sensor;
+    LinearSensor <float> vbat_sensor;
+    LinearSensor <float> shunt_sensor;
 };
 
 template <typename LPUTuple, typename EnablePinTuple>
