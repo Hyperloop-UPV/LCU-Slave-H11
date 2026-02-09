@@ -28,6 +28,7 @@ namespace LCU_Slave {
         // Create timer wrapper on stack
         static auto my_tim = get_timer_instance(Board, timer);
         g_timer = &my_tim;
+        my_tim.set_pwm_frequency(10'000); // 10khz
         
         static auto my_pwm1 = my_tim.template get_pwm<pwm_positive>();
         static auto my_pwm2 = my_tim.template get_pwm<pwm_negative>();
@@ -40,7 +41,7 @@ namespace LCU_Slave {
         // Create LPU
         static auto my_lpu = LPUType(
             my_pwm1, my_pwm2,
-            Pinout::shunt1, Pinout::vbat_1,
+            Pinout::vbat_1, Pinout::shunt1,
             0.0f, 1.0f, 0.0f, 1.0f
         );
 

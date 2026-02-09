@@ -70,13 +70,13 @@ namespace LCU_SM {
         // Exit RUNNING: deinitialize control
         sm.add_exit_action([]() {
             Control::deinit();
-            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all_impl();
+            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all();
             flag_start_running = false;
         }, control_state_running);
 
         // Exit STICK_DOWN: cleanup
         sm.add_exit_action([]() {
-            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all_impl();
+            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all();
             flag_stick_down = false;
         }, control_state_stick_down);
 
@@ -133,15 +133,15 @@ namespace LCU_SM {
         );
 
         sm.add_enter_action([]() {
-            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->enable_all_impl();
+            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->enable_all();
         }, state_operational);
 
         sm.add_enter_action([]() {
-            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all_impl();
+            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all();
         }, state_fault);
 
         sm.add_exit_action([]() {
-            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all_impl();
+            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all();
         }, state_operational);
 
         sm.add_state_machine(sm_control, state_operational);

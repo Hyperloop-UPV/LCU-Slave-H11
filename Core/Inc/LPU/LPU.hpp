@@ -10,12 +10,15 @@ template <typename PWMPositive, typename PWMNegative>
 class LPU : public LPUBase {
    public:
     LPU(PWMPositive& pwm_positive, PWMNegative& pwm_negative,
-        Pin &shunt_pin, Pin &vbat_pin, float vbat_offset, float vbat_slope, float shunt_offset, float shunt_slope) :
+        Pin &vbat_pin, Pin &shunt_pin, float vbat_offset, float vbat_slope, float shunt_offset, float shunt_slope) :
             pwm_positive(pwm_positive),
             pwm_negative(pwm_negative),
             vbat_sensor(vbat_pin, vbat_slope, vbat_offset, &vbat_v),
             shunt_sensor(shunt_pin, shunt_slope, shunt_offset, &shunt_v) {
-
+        
+        fault = false;
+        ready = true;
+        state = State::Running;
     }
 
     void update() {
@@ -107,8 +110,9 @@ class LPU : public LPUBase {
    private:
     PWMPositive& pwm_positive;
     PWMNegative& pwm_negative;
-    LinearSensor <float> vbat_sensor;
-    LinearSensor <float> shunt_sensor;
+
+    LinearSensor<volatile float> vbat_sensor;
+    LinearSensor<volatile float> shunt_sensor;
 };
 
 template <typename LPUTuple, typename EnablePinTuple>
@@ -133,17 +137,17 @@ class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
         enable_pins = std::apply([](auto&... pin) { return std::make_tuple(&pin...); }, _pins);
     }
 
-    void enable_all_impl() {
-        std::apply([](auto&... pin) { (pin->turn_on(), ...); }, enable_pins);
+    void enable_all() {
+        std::apply([](auto&... pin) { (pin->turn_off(), ...); }, enable_pins);
         std::apply([](auto*... lpu) { (lpu->enable(), ...); }, lpus);
     }
 
-    void disable_all_impl() {
+    void disable_all() {
         std::apply([](auto&... pin) { (pin->turn_off(), ...); }, enable_pins);
         std::apply([](auto*... lpu) { (lpu->disable(), ...); }, lpus);
     }
 
-    void zeroing_all_impl() {
+    void zeroing_all() {
         std::apply([](auto*... lpu) { (lpu->zeroing(), ...); }, lpus);
     }
 
@@ -159,6 +163,10 @@ class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
 
         std::get<PinIndex * 2>(lpus)->enable();
         std::get<PinIndex * 2 + 1>(lpus)->enable();
+    }
+
+    void update_all() {
+        std::apply([](auto*... lpu) { (lpu->update(), ...); }, lpus);
     }
 
     template <size_t Index>
