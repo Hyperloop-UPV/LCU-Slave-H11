@@ -6,6 +6,10 @@
 #include "Common/Flags.hpp"
 
 namespace Pinout {
+    // ============================================
+    // General bits and bobs
+    // ============================================
+
     /* LED (Digital Output) */
     auto &led_fault = ST_LIB::PE8; // Change it to the actual pin
     auto &led_operational = ST_LIB::PF15; // Change it to the actual pin
@@ -14,12 +18,17 @@ namespace Pinout {
     auto &master_fault = ST_LIB::PE0;
     auto &slave_fault = ST_LIB::PE1;
 
+    // ============================================
+    // LPU
+    // ============================================
+
     /* EN_BUFF (Digital Output) */
     auto &en_buff_1 = ST_LIB::PG7;
     auto &en_buff_2 = ST_LIB::PG6;
     auto &en_buff_3 = ST_LIB::PG5;
     auto &en_buff_4 = ST_LIB::PG4;
     auto &en_buff_5 = ST_LIB::PB2;
+
     /* PWM (Timer) */
     auto &pwm1_1 = ST_LIB::PE5;
     auto &pwm1_2 = ST_LIB::PE6;
@@ -75,6 +84,10 @@ namespace Pinout {
     auto &vbat_9 = PC3;
     auto &vbat_10 = PC2;
 
+    // ============================================
+    // Airgap
+    // ============================================
+
     /* AIRGAP (ADC) */
     auto &airgap_1 = PA7;
     auto &airgap_2 = PA6;
@@ -85,7 +98,10 @@ namespace Pinout {
     auto &airgap_7 = PC5;
     auto &airgap_8 = PC4;
 
-    /* SPI */
+    // ============================================
+    // SPI
+    // ============================================
+
     // auto spi_inst = /* TODO */;
     auto &spi_sck = ST_LIB::PC10;
     auto &spi_miso = ST_LIB::PC11;
