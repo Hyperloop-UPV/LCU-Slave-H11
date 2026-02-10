@@ -25,7 +25,7 @@ namespace LCU_Slave {
         Board::init();
 
         // Create timer wrapper on stack
-        auto my_tim = get_timer_instance(Board, timer);
+        static auto my_tim = get_timer_instance(Board, timer);
         my_tim.set_pwm_frequency(10'000); // 10khz
         
         static auto my_pwm_positive = my_tim.template get_pwm<pwm_positive>();

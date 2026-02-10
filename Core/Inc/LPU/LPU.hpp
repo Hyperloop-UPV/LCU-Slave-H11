@@ -136,6 +136,7 @@ class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
     LpuArray(std::tuple<LPUs&...> _lpus, std::tuple<EnablePins&...> _pins) {
         lpus = std::apply([](auto&... lpu) { return std::make_tuple(&lpu...); }, _lpus);
         enable_pins = std::apply([](auto&... pin) { return std::make_tuple(&pin...); }, _pins);
+        disable_all();
     }
 
     void enable_all() {
@@ -144,7 +145,7 @@ class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
     }
 
     void disable_all() {
-        std::apply([](auto&... pin) { (pin->turn_off(), ...); }, enable_pins);
+        std::apply([](auto&... pin) { (pin->turn_on(), ...); }, enable_pins);
         std::apply([](auto*... lpu) { (lpu->disable(), ...); }, lpus);
     }
 
@@ -155,7 +156,7 @@ class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
     template <size_t LpuIndex>
     void enable_pair() {
         if constexpr (LpuCount == 1) {
-            std::get<0>(enable_pins)->turn_on();
+            std::get<0>(enable_pins)->turn_of();
             std::get<0>(lpus)->enable();
             return;
         }
