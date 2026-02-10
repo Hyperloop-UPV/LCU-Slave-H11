@@ -2,7 +2,7 @@
 #include "LCU_SLAVE.hpp"
 
 int main(void) { 
-  Hard_fault_check();
+  //Hard_fault_check();
   
   LCU_Slave::init();
 

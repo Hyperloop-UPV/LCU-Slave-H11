@@ -5,7 +5,6 @@
 #include "LPU/LPU.hpp"
 #include "Airgap/Airgap.hpp"
 #include "Pinout/Pinout.hpp"
-#include "ST-LIB_LOW/DigitalOutput2.hpp"
 #include "ConfigShared.hpp"
 
 // Forward declarations
@@ -39,14 +38,22 @@ namespace LCU_Slave {
 
     inline constexpr auto en_buff_1 = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_1);
 
+    float vbat_1_buffer = 0.0f;
+    float shunt1_buffer = 0.0f;
+    float airgap_1_buffer = 0.0f;
+
+    inline constexpr auto adc_vbat = ST_LIB::ADCDomain::ADC(Pinout::vbat_1, vbat_1_buffer);
+    inline constexpr auto adc_shunt = ST_LIB::ADCDomain::ADC(Pinout::shunt1, shunt1_buffer);
+    inline constexpr auto adc_airgap = ST_LIB::ADCDomain::ADC(Pinout::airgap_1, airgap_1_buffer);
+
     // ============================================
     // Type Aliases
     // ============================================
-    using Board = ST_LIB::Board<timer, en_buff_1>;
+    using Board = ST_LIB::Board<timer, en_buff_1, adc_vbat, adc_shunt, adc_airgap>;
     using TimerWrapperType = ST_LIB::TimerWrapper<timer>;
     using PWMPositiveType = decltype(std::declval<TimerWrapperType>().template get_pwm<pwm_positive>());
     using PWMNegativeType = decltype(std::declval<TimerWrapperType>().template get_pwm<pwm_negative>());
-    using EnablePinType = std::remove_reference_t<decltype(Board::instance_of<en_buff_1>())>;
+    using EnablePinType = ST_LIB::DigitalOutputDomain::Instance;
     using LPUType = LPU<PWMPositiveType, PWMNegativeType>;
     using LpuArrayType = decltype(LpuArray(
         std::tie(*static_cast<LPUType*>(nullptr)), 

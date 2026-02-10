@@ -5,16 +5,17 @@
 #include "LPUShared.hpp"
 #include "HALAL/Services/PWM/PWM.hpp"
 #include "ST-LIB_LOW/Sensors/LinearSensor/LinearSensor.hpp"
+#include "HALAL/Services/ADC/NewADC.hpp"
 
 template <typename PWMPositive, typename PWMNegative>
 class LPU : public LPUBase {
    public:
     LPU(PWMPositive& pwm_positive, PWMNegative& pwm_negative,
-        Pin &vbat_pin, Pin &shunt_pin, float vbat_offset, float vbat_slope, float shunt_offset, float shunt_slope) :
+        ST_LIB::ADCDomain::Instance &adc_vbat_instance, ST_LIB::ADCDomain::Instance &adc_shunt_instance, float vbat_offset, float vbat_slope, float shunt_offset, float shunt_slope) :
             pwm_positive(pwm_positive),
             pwm_negative(pwm_negative),
-            vbat_sensor(vbat_pin, vbat_slope, vbat_offset, &vbat_v),
-            shunt_sensor(shunt_pin, shunt_slope, shunt_offset, &shunt_v) {
+            vbat_sensor(adc_vbat_instance, vbat_slope, vbat_offset, &vbat_v),
+            shunt_sensor(adc_shunt_instance, shunt_slope, shunt_offset, &shunt_v) {
         
         fault = false;
         ready = true;

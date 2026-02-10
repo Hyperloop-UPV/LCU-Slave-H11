@@ -4,13 +4,14 @@
 #include "C++Utilities/CppImports.hpp"
 #include "AirgapShared.hpp"
 #include "ST-LIB_LOW/Sensors/LinearSensor/LinearSensor.hpp"
+#include "HALAL/Services/ADC/NewADC.hpp"
 
 class Airgap : public AirgapBase {
     LinearSensor<float>* airgap_sensor;
 
    public:
-    Airgap(Pin &airgap_pin, float airgap_offset, float airgap_slope) {
-        airgap_sensor = new LinearSensor<float>(airgap_pin, airgap_slope, airgap_offset, &airgap_v);
+    Airgap(ST_LIB::ADCDomain::Instance& airgap_instance, float airgap_offset, float airgap_slope) {
+        airgap_sensor = new LinearSensor<float>(airgap_instance, airgap_slope, airgap_offset, &airgap_v);
     }
 
     void update() {

@@ -61,42 +61,42 @@ namespace Pinout {
     auto &pwm10_2 = ST_LIB::PE11;
 
     /* SHUNT (ADC) */
-    auto &shunt1 = PC1;
-    auto &shunt2 = PC0;
-    auto &shunt3 = PA0;
-    auto &shunt4 = PA1;
-    auto &shunt5 = PA2;
-    auto &shunt6 = PA3;
-    auto &shunt7 = PF14;
-    auto &shunt8 = PF13;
-    auto &shunt9 = PF12;
-    auto &shunt10 = PF11;
+    auto &shunt1 = ST_LIB::PC1;
+    auto &shunt2 = ST_LIB::PC0;
+    auto &shunt3 = ST_LIB::PA0;
+    auto &shunt4 = ST_LIB::PA1;
+    auto &shunt5 = ST_LIB::PA2;
+    auto &shunt6 = ST_LIB::PA3;
+    auto &shunt7 = ST_LIB::PF14;
+    auto &shunt8 = ST_LIB::PF13;
+    auto &shunt9 = ST_LIB::PF12;
+    auto &shunt10 = ST_LIB::PF11;
 
     /* VBAT (ADC) */
-    auto &vbat_1 = PF3;
-    auto &vbat_2 = PF4;
-    auto &vbat_3 = PF5;
-    auto &vbat_4 = PF6;
-    auto &vbat_5 = PF8;
-    auto &vbat_6 = PF7;
-    auto &vbat_7 = PF10;
-    auto &vbat_8 = PF9;
-    auto &vbat_9 = PC3;
-    auto &vbat_10 = PC2;
+    auto &vbat_1 = ST_LIB::PF3;
+    auto &vbat_2 = ST_LIB::PF4;
+    auto &vbat_3 = ST_LIB::PF5;
+    auto &vbat_4 = ST_LIB::PF6;
+    auto &vbat_5 = ST_LIB::PF8;
+    auto &vbat_6 = ST_LIB::PF7;
+    auto &vbat_7 = ST_LIB::PF10;
+    auto &vbat_8 = ST_LIB::PF9;
+    auto &vbat_9 = ST_LIB::PC3;
+    auto &vbat_10 = ST_LIB::PC2;
 
     // ============================================
     // Airgap
     // ============================================
 
     /* AIRGAP (ADC) */
-    auto &airgap_1 = PA7;
-    auto &airgap_2 = PA6;
-    auto &airgap_3 = PA5;
-    auto &airgap_4 = PA4;
-    auto &airgap_5 = PB1;
-    auto &airgap_6 = PB0;
-    auto &airgap_7 = PC5;
-    auto &airgap_8 = PC4;
+    auto &airgap_1 = ST_LIB::PA7;
+    auto &airgap_2 = ST_LIB::PA6;
+    auto &airgap_3 = ST_LIB::PA5;
+    auto &airgap_4 = ST_LIB::PA4;
+    auto &airgap_5 = ST_LIB::PB1;
+    auto &airgap_6 = ST_LIB::PB0;
+    auto &airgap_7 = ST_LIB::PC5;
+    auto &airgap_8 = ST_LIB::PC4;
 
     // ============================================
     // SPI
