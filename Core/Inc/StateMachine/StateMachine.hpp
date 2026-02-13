@@ -4,147 +4,90 @@
 #include "ST-LIB_LOW/StateMachine/StateMachine.hpp"
 #include "LCU_SLAVE_Types.hpp"
 #include "Control/Control.hpp"
-
-// ============================================
-// State Enums
-// ============================================
-
-enum class SystemStates : uint8_t {
-    INITIAL = 0,
-    IDLE = 1,
-    OPERATIONAL = 2,
-    FAULT = 3
-};
-
-enum class ControlStates : uint8_t {
-    IDLE = 0,
-    RUNNING = 1,
-    STICK_DOWN = 2,
-};
-
-// ============================================
-// Global State Machine Interface
-// ============================================
+#include "CommunicationsShared.hpp"
 
 namespace LCU_SM {
-    // Control flags (set by Frame commands from Master)
-    inline bool flag_enable = false;
-    inline bool flag_start_running = false;
-    inline bool flag_stick_down = false;
-    inline bool flag_fault = false;
+
+    enum class OperationalState : uint8_t {
+        IDLE = 0,
+        LEVITATING = 1,
+        FAULT = 2
+    };
+
+    inline volatile CommandPacket* command_packet = nullptr;
+
+    inline void set_command_packet(volatile CommandPacket* ptr) {
+        command_packet = ptr;
+    }
+
+    // ============================================
+    // Operational State Machine
+    // ============================================
+
+    static constexpr auto state_idle = make_state(OperationalState::IDLE,
+        Transition{OperationalState::LEVITATING, []() {
+            if (!command_packet) return false;
+            auto cmds = command_packet->commands;
+            return (bool)((cmds & CommandFlags::LEVITATE) != CommandFlags::NONE);
+        }}
+    );
+
+    static constexpr auto state_levitating = make_state(OperationalState::LEVITATING,
+        Transition{OperationalState::IDLE, []() {
+            auto cmds = command_packet->commands;
+            bool stop_requested = (cmds & CommandFlags::STOP_LEVITATE) != CommandFlags::NONE;
+            return stop_requested;
+        }},
+        Transition{OperationalState::FAULT, []() {
+            return !LCU_Slave::g_lpu_array->is_all_ok();
+        }}
+    );
     
-    // Control parameters
-    inline float desired_gap_reference = 0.0f;
+    static constexpr auto state_fault = make_state(OperationalState::FAULT);
 
-    // ============================================
-    // Control State Machine Definition
-    // ============================================
-    static constexpr auto control_state_idle = make_state(ControlStates::IDLE,
-        Transition{ControlStates::RUNNING, []() { return flag_start_running; }},
-        Transition{ControlStates::STICK_DOWN, []() { return flag_stick_down; }}
-    );
-
-    static constexpr auto control_state_running = make_state(ControlStates::RUNNING,
-        Transition{ControlStates::IDLE, []() { return !flag_start_running; }}
-    );
-
-    static constexpr auto control_state_stick_down = make_state(ControlStates::STICK_DOWN,
-        Transition{ControlStates::IDLE, []() { return !flag_stick_down; }}
-    );
-
-    static constinit auto sm_control = []() consteval {
+    static constinit auto sm_operational = []() consteval {
         auto sm = make_state_machine(
-            ControlStates::IDLE,
-            control_state_idle,
-            control_state_running,
-            control_state_stick_down
+            OperationalState::IDLE,
+            state_idle,
+            state_levitating,
+            state_fault
         );
 
         using namespace std::chrono_literals;
 
-        // Enter RUNNING: initialize control
         sm.add_enter_action([]() {
+            LCU_Slave::g_led_fault->turn_on();
             Control::init();
-        }, control_state_running);
+            LCU_Slave::g_lpu_array->enable_all();
+        }, state_levitating);
 
-        // Exit RUNNING: deinitialize control
         sm.add_exit_action([]() {
+            LCU_Slave::g_led_fault->turn_off();
             Control::deinit();
-            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all();
-            flag_start_running = false;
-        }, control_state_running);
-
-        // Exit STICK_DOWN: cleanup
-        sm.add_exit_action([]() {
-            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all();
-            flag_stick_down = false;
-        }, control_state_stick_down);
-
-        // RUNNING: Execute cascaded control loops
-        // Inner loop: Current control at 2 kHz
-        sm.add_cyclic_action([]() {
-            // TODO: Get measured current from LPU
-            float measured_current = 0.0f; // LCU_Slave::g_lpu->get_current();
-            Control::current_update(measured_current);
-        }, 500us, control_state_running);
-
-        // Outer loop: Levitation control at 1 kHz
-        sm.add_cyclic_action([]() {
-            // TODO: Get measured gap from airgap sensor
-            float measured_gap = 0.0f; // LCU_Slave::g_airgap->get_gap();
-            Control::levitation_update(measured_gap, desired_gap_reference);
-        }, 1000us, control_state_running);
-
-        // STICK_DOWN: Apply negative current to stick down
-        sm.add_cyclic_action([]() {
-            // TODO: Apply constant negative current
-            // LCU_Slave::g_lpu_array->set_current(-50.0f);
-        }, 1000us, control_state_stick_down);
-
-        return sm;
-    }();
-
-    // ============================================
-    // System State Machine Definition
-    // ============================================
-    static constexpr auto state_initial = make_state(SystemStates::INITIAL,
-        Transition{SystemStates::IDLE, []() { return flag_enable; }}
-    );
-
-    static constexpr auto state_idle = make_state(SystemStates::IDLE,
-        Transition{SystemStates::OPERATIONAL, []() { return flag_enable; }},
-        Transition{SystemStates::FAULT, []() { return flag_fault; }}
-    );
-
-    static constexpr auto state_operational = make_state(SystemStates::OPERATIONAL,
-        Transition{SystemStates::IDLE, []() { return !flag_enable; }},
-        Transition{SystemStates::FAULT, []() { return flag_fault; }}
-    );
-
-    static constexpr auto state_fault = make_state(SystemStates::FAULT);
-
-    static constinit auto sm_system = []() consteval {
-        auto sm = make_state_machine(
-            SystemStates::INITIAL,
-            state_initial,
-            state_idle,
-            state_operational,
-            state_fault
-        );
-
+            LCU_Slave::g_lpu_array->disable_all();
+        }, state_levitating);
+        
+        // Enter Fault: Safe State
         sm.add_enter_action([]() {
-            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->enable_all();
-        }, state_operational);
-
-        sm.add_enter_action([]() {
-            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all();
+            LCU_Slave::g_led_fault->turn_on();
+            Control::deinit();
+            LCU_Slave::g_lpu_array->disable_all();
         }, state_fault);
 
-        sm.add_exit_action([]() {
-            if (LCU_Slave::g_lpu_array) LCU_Slave::g_lpu_array->disable_all();
-        }, state_operational);
+        sm.add_cyclic_action([]() {
+            LCU_Slave::g_lpu_array->update_all();
+            LCU_Slave::g_airgap->update();
+        }, 100us, state_levitating);
 
-        sm.add_state_machine(sm_control, state_operational);
+        // Current Control
+        sm.add_cyclic_action([]() {
+            Control::current_update(0.0f);
+        }, 200us, state_levitating);
+
+        // Levitation Control
+        sm.add_cyclic_action([]() {
+            Control::levitation_update(0.0f, 0.0f);
+        }, 1000us, state_levitating);
 
         return sm;
     }();
@@ -154,38 +97,11 @@ namespace LCU_SM {
     // ============================================
 
     inline void start() {
-        sm_system.start();
+        sm_operational.start();
     }
 
     inline void update() {
-        sm_system.check_transitions();
-    }
-
-    inline void set_enable(bool enable) { flag_enable = enable; }
-    
-    inline void start_levitation(float gap_reference) { 
-        desired_gap_reference = gap_reference;
-        flag_start_running = true; 
-    }
-    
-    inline void stop_levitation() {
-        flag_start_running = false;
-    }
-    
-    inline void set_stick_down(bool active) { flag_stick_down = active; }
-    inline void set_fault(bool fault) { flag_fault = fault; }
-    
-    inline void stop_control() {
-        flag_start_running = false;
-        flag_stick_down = false;
-    }
-
-    inline SystemStates get_system_state() { 
-        return static_cast<SystemStates>(sm_system.get_current_state_id()); 
-    }
-    
-    inline ControlStates get_control_state() { 
-        return static_cast<ControlStates>(sm_control.get_current_state_id()); 
+        sm_operational.check_transitions();
     }
 }
 

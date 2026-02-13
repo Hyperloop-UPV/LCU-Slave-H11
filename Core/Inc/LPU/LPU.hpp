@@ -22,26 +22,15 @@ class LPU : public LPUBase {
         state = State::Running;
     }
 
-    void update() {
-        if (state == State::Fault) return;
-
-        if (fault) {
-            disable();
-            state = State::Fault;
-            return;
-        }
-
-        if (state == State::Idle || state == State::Ready) {
-            if (ready) {
-                state = State::Ready;
-                return;
-            } else {
-                state = State::Idle;
-                return;
-            }
-        }
+    bool update() {
+        if (state == State::Fault) return false;
+        if (state != State::Running) return true;
         vbat_sensor.read();
         shunt_sensor.read();
+
+        // Protection Logic
+        if (std::abs(shunt_v) > 20.0f) return false;
+        return true;
     }
 
     /**
@@ -132,6 +121,8 @@ class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
     LPUPtrTuple lpus;
     PinPtrTuple enable_pins;
 
+    bool all_ok = true;
+
    public:
     LpuArray(std::tuple<LPUs&...> _lpus, std::tuple<EnablePins&...> _pins) {
         lpus = std::apply([](auto&... lpu) { return std::make_tuple(&lpu...); }, _lpus);
@@ -156,7 +147,7 @@ class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
     template <size_t LpuIndex>
     void enable_pair() {
         if constexpr (LpuCount == 1) {
-            std::get<0>(enable_pins)->turn_of();
+            std::get<0>(enable_pins)->turn_off();
             std::get<0>(lpus)->enable();
             return;
         }
@@ -167,8 +158,14 @@ class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
         std::get<PinIndex * 2 + 1>(lpus)->enable();
     }
 
-    void update_all() {
-        std::apply([](auto*... lpu) { (lpu->update(), ...); }, lpus);
+    bool update_all() {
+        all_ok = true;
+        std::apply([&](auto&... lpu) { ((all_ok &= lpu->update()), ...); }, lpus);
+        return all_ok;
+    }
+
+    bool is_all_ok() {
+        return all_ok;
     }
 
     template <size_t Index>

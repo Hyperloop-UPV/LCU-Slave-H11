@@ -102,7 +102,7 @@ namespace Pinout {
     // SPI
     // ============================================
 
-    // auto spi_inst = /* TODO */;
+    auto constexpr spi_peripheral = ST_LIB::SPIDomain::SPIPeripheral::spi3;
     auto &spi_sck = ST_LIB::PC10;
     auto &spi_miso = ST_LIB::PC11;
     auto &spi_mosi = ST_LIB::PC12;

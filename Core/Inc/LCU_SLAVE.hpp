@@ -11,18 +11,18 @@ namespace LCU_Slave {
     // ============================================
     // Global Hardware Instances (definitions)
     // ============================================
-    PWMPositiveType* g_pwm_positive;
-    PWMNegativeType* g_pwm_negative;
-    EnablePinType* g_enable_pin;
-    LPUType* g_lpu;
-    Airgap* g_airgap;
-    LpuArrayType* g_lpu_array;
+
 
     // ============================================
     // Initialization
     // ============================================
     inline void init() {
         Board::init();
+
+        static auto& led_operational = Board::instance_of<led_operational_req>();
+        static auto& led_fault = Board::instance_of<led_fault_req>();
+        g_led_operational = &led_operational;
+        g_led_fault = &led_fault;
 
         // Create timer wrapper on stack
         static auto my_tim = get_timer_instance(Board, timer);
@@ -54,54 +54,38 @@ namespace LCU_Slave {
         static auto my_lpu_array = LpuArray(std::tie(*g_lpu), std::tie(*g_enable_pin));
         g_lpu_array = &my_lpu_array;
 
-        STLIB::start();
+        // SPI
+        static auto my_spi = Board::instance_of<spi_req>();
+        static auto my_spi_wrapper = SpiType(my_spi);
+        my_spi_wrapper.set_software_nss(false); // We'll control NSS via GPIO
+        Communications::g_spi = &my_spi_wrapper;
 
-        // // Initialize communications
-        // Communications::init();
+        static auto my_slave_ready = Board::instance_of<slave_ready>();
+        Communications::g_slave_ready = &my_slave_ready;
+        Communications::g_slave_ready->turn_off();
 
-        // // Initialize state machine
-        // LCU_SM::start();
+        Scheduler::start();
+        MDMA::start();
 
-        // // Initialize frame (TX: LPU + Airgap + Status, RX: LPU + Commands)
-        // Frame::init(Communications::comms, g_lpu, g_airgap, Communications::comms, g_lpu);
+        // Initialize communications
+        Communications::init();
 
+        // Initialize state machine
+        LCU_SM::set_command_packet(&Communications::comms.command_packet);
+        LCU_SM::start();
 
-        g_lpu_array->enable_all();
+        // Initialize frame (TX: LPU + Airgap + Status, RX: LPU + Commands)
+        Frame::init(Communications::comms, *g_lpu, *g_airgap, Communications::comms, *g_lpu);
     }
 
     // ============================================
     // Main Loop
     // ============================================
     inline void update() {
-        // Communications::update();  // Handles Frame RX/TX and command processing
-        // LCU_SM::update();          // Update state machine transitions
-        STLIB::update();           // Update ST-LIB services
-
-        g_lpu_array->update_all();
-        g_lpu->set_duty(50.0f);
-    }
-
-    // ============================================
-    // Command Interface (called by Frame or external)
-    // ============================================
-    inline void enable() {
-        LCU_SM::set_enable(true);
-    }
-
-    inline void disable() {
-        LCU_SM::set_enable(false);
-    }
-
-    inline void start_control() {
-        LCU_SM::start_levitation(LCU_SM::desired_gap_reference);
-    }
-
-    inline void stop_control() {
-        LCU_SM::stop_control();
-    }
-
-    inline void trigger_fault() {
-        LCU_SM::set_fault(true);
+        Communications::update();  // Handles Frame RX/TX and command processing
+        LCU_SM::update();          // Update state machine transitions
+        Scheduler::update();
+        MDMA::update();
     }
 
 } // namespace LCU_Slave

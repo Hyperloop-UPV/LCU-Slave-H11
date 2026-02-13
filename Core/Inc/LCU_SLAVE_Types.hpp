@@ -6,6 +6,7 @@
 #include "Airgap/Airgap.hpp"
 #include "Pinout/Pinout.hpp"
 #include "ConfigShared.hpp"
+#include "SpiShared.hpp"
 
 // Forward declarations
 template <typename LPUTuple, typename EnablePinTuple>
@@ -16,6 +17,9 @@ class LpuArray;
 // ============================================
 
 namespace LCU_Slave {
+
+    inline constexpr auto led_operational_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_operational);
+    inline constexpr auto led_fault_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_fault);
 
     // Timer and PWM configuration
     inline constexpr auto pwm_positive = ST_LIB::TimerPin({
@@ -46,10 +50,18 @@ namespace LCU_Slave {
     inline constexpr auto adc_shunt = ST_LIB::ADCDomain::ADC(Pinout::shunt1, shunt1_buffer);
     inline constexpr auto adc_airgap = ST_LIB::ADCDomain::ADC(Pinout::airgap_1, airgap_1_buffer);
 
+    // SPI Configuration
+    inline constexpr auto spi_req = 
+        ST_LIB::SPIDomain::Device<DMA_Domain::Stream::dma1_stream5, DMA_Domain::Stream::dma1_stream6>(
+            ST_LIB::SPIDomain::SPIMode::SLAVE, Pinout::spi_peripheral,
+            2000000, Pinout::spi_sck, Pinout::spi_miso, Pinout::spi_mosi, spi_conf
+        );
+    inline constexpr auto slave_ready = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::spi_nss);
+
     // ============================================
     // Type Aliases
     // ============================================
-    using Board = ST_LIB::Board<timer, en_buff_1, adc_vbat, adc_shunt, adc_airgap>;
+    using Board = ST_LIB::Board<led_operational_req, led_fault_req, timer, spi_req, slave_ready, en_buff_1, adc_vbat, adc_shunt, adc_airgap>;
     using TimerWrapperType = ST_LIB::TimerWrapper<timer>;
     using PWMPositiveType = decltype(std::declval<TimerWrapperType>().template get_pwm<pwm_positive>());
     using PWMNegativeType = decltype(std::declval<TimerWrapperType>().template get_pwm<pwm_negative>());
@@ -61,17 +73,20 @@ namespace LCU_Slave {
     ));
 
     using Frame = SystemFrame<false>; // false for Slave
+    
+    using SpiType = ST_LIB::SPIDomain::SPIWrapper<spi_req>;
 
     // ============================================
     // Global Hardware Instances (extern declarations)
     // ============================================
-    extern TimerWrapperType* g_timer;
-    extern PWMPositiveType* g_pwm_positive;
-    extern PWMNegativeType* g_pwm_negative;
-    extern EnablePinType* g_enable_pin;
-    extern LPUType* g_lpu;
-    extern Airgap* g_airgap;
-    extern LpuArrayType* g_lpu_array;
+    PWMPositiveType* g_pwm_positive;
+    PWMNegativeType* g_pwm_negative;
+    EnablePinType* g_enable_pin;
+    LPUType* g_lpu;
+    Airgap* g_airgap;
+    LpuArrayType* g_lpu_array;
+    ST_LIB::DigitalOutputDomain::Instance* g_led_operational;
+    ST_LIB::DigitalOutputDomain::Instance* g_led_fault;
 
 } // namespace LCU_Slave
 
