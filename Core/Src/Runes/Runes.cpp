@@ -175,7 +175,6 @@ map<Pin, InputCapture::Instance> InputCapture::available_instances = {
 
 #endif
 
-
 /************************************************
  *					   I2C
  ***********************************************/

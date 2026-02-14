@@ -8,24 +8,47 @@
 
 namespace LCU_SM {
 
-enum class OperationalState : uint8_t { IDLE = 0, LEVITATING = 1, FAULT = 2 };
+enum class OperationalState : uint8_t { SPI_CONNECTING = 0, IDLE = 1, LEVITATING = 2, FAULT = 3 };
 
 inline volatile CommandPacket* command_packet = nullptr;
+inline volatile uint32_t* spi_error_counter = nullptr;
 
 inline void set_command_packet(volatile CommandPacket* ptr) { command_packet = ptr; }
+inline void set_spi_error_counter_ptr(volatile uint32_t* ptr) { spi_error_counter = ptr; }
 
 // ============================================
 // Operational State Machine
 // ============================================
 
-static constexpr auto state_idle =
-    make_state(OperationalState::IDLE, Transition{OperationalState::LEVITATING, []() {
-                                                      if (!command_packet)
-                                                          return false;
-                                                      auto cmds = command_packet->commands;
-                                                      return (bool)((cmds & CommandFlags::LEVITATE
-                                                                    ) != CommandFlags::NONE);
-                                                  }});
+static constexpr auto state_spi_connecting =
+    make_state(OperationalState::SPI_CONNECTING, Transition{OperationalState::IDLE, []() {
+                                                                if (!command_packet ||
+                                                                    !spi_error_counter)
+                                                                    return false;
+                                                                // Transition to IDLE if connection
+                                                                // is stable (counter is 0)
+                                                                return *spi_error_counter == 0;
+                                                            }});
+
+static constexpr auto state_idle = make_state(
+    OperationalState::IDLE,
+    Transition{
+        OperationalState::LEVITATING,
+        []() {
+            if (!command_packet)
+                return false;
+            auto cmds = command_packet->commands;
+            return (bool)((cmds & CommandFlags::LEVITATE) != CommandFlags::NONE);
+        }
+    },
+    Transition{
+        OperationalState::FAULT,
+        []() {
+            // Go to fault if too many errors
+            return spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS);
+        }
+    }
+);
 
 static constexpr auto state_levitating = make_state(
     OperationalState::LEVITATING,
@@ -37,13 +60,27 @@ static constexpr auto state_levitating = make_state(
             return stop_requested;
         }
     },
-    Transition{OperationalState::FAULT, []() { return !LCU_Slave::g_lpu_array->is_all_ok(); }}
+    Transition{
+        OperationalState::FAULT,
+        []() {
+            bool hardware_fault = !LCU_Slave::g_lpu_array->is_all_ok();
+            bool comms_fault =
+                spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS);
+            return hardware_fault || comms_fault;
+        }
+    }
 );
 
 static constexpr auto state_fault = make_state(OperationalState::FAULT);
 
 static constinit auto sm_operational = []() consteval {
-    auto sm = make_state_machine(OperationalState::IDLE, state_idle, state_levitating, state_fault);
+    auto sm = make_state_machine(
+        OperationalState::SPI_CONNECTING,
+        state_spi_connecting,
+        state_idle,
+        state_levitating,
+        state_fault
+    );
 
     using namespace std::chrono_literals;
 
