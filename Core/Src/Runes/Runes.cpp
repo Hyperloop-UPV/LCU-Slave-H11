@@ -42,21 +42,25 @@ FMAC_HandleTypeDef hfmac;
 
 extern FDCAN_HandleTypeDef hfdcan1;
 
-FDCAN::Instance FDCAN::instance1 = {.TX = PD1,
-                                    .RX = PD0,
-                                    .hfdcan = &hfdcan1,
-                                    .instance = FDCAN1,
-                                    .dlc = DLC::BYTES_64,
-                                    .rx_location = FDCAN_RX_FIFO0,
-                                    .fdcan_number = 1};
+FDCAN::Instance FDCAN::instance1 = {
+    .TX = PD1,
+    .RX = PD0,
+    .hfdcan = &hfdcan1,
+    .instance = FDCAN1,
+    .dlc = DLC::BYTES_64,
+    .rx_location = FDCAN_RX_FIFO0,
+    .fdcan_number = 1
+};
 
 FDCAN::Peripheral FDCAN::fdcan1 = FDCAN::Peripheral::peripheral1;
 
 unordered_map<FDCAN::Peripheral, FDCAN::Instance*> FDCAN::available_fdcans = {
-    {FDCAN::fdcan1, &FDCAN::instance1}};
+    {FDCAN::fdcan1, &FDCAN::instance1}
+};
 
 unordered_map<FDCAN_HandleTypeDef*, FDCAN::Instance*> FDCAN::handle_to_fdcan = {
-    {FDCAN::instance1.hfdcan, &FDCAN::instance1}};
+    {FDCAN::instance1.hfdcan, &FDCAN::instance1}
+};
 
 #endif
 
@@ -118,9 +122,8 @@ TimerPeripheral timer17(&htim17, {BASE}, "TIM 17");
 TimerPeripheral timer15(&htim15, {ADVANCED}, "TIM 15");
 TimerPeripheral timer23(&htim23, {BASE, 275, UINT32_MAX - 1}, "TIM 23");
 
-vector<reference_wrapper<TimerPeripheral>> TimerPeripheral::timers = {
-    timer1,  timer2,  timer3,  timer4, timer12,
-    timer15, timer16, timer17, timer23};
+vector<reference_wrapper<TimerPeripheral>> TimerPeripheral::timers =
+    {timer1, timer2, timer3, timer4, timer12, timer15, timer16, timer17, timer23};
 
 #endif
 
@@ -167,7 +170,8 @@ DualPWMmap TimerPeripheral::available_dual_pwms = {
 #ifdef HAL_TIM_MODULE_ENABLED
 
 map<Pin, InputCapture::Instance> InputCapture::available_instances = {
-    {PF0, InputCapture::Instance(PF0, &timer23, TIM_CHANNEL_1, TIM_CHANNEL_2)}};
+    {PF0, InputCapture::Instance(PF0, &timer23, TIM_CHANNEL_1, TIM_CHANNEL_2)}
+};
 
 #endif
 
@@ -177,7 +181,9 @@ map<Pin, InputCapture::Instance> InputCapture::available_instances = {
 #ifdef HAL_EXTI_MODULE_ENABLED
 
 map<uint16_t, ExternalInterrupt::Instance> ExternalInterrupt::instances = {
-    {PE0.gpio_pin, Instance(EXTI0_IRQn)}, {PE1.gpio_pin, Instance(EXTI1_IRQn)}};
+    {PE0.gpio_pin, Instance(EXTI0_IRQn)},
+    {PE1.gpio_pin, Instance(EXTI1_IRQn)}
+};
 
 #endif
 
@@ -187,17 +193,17 @@ map<uint16_t, ExternalInterrupt::Instance> ExternalInterrupt::instances = {
 
 #ifdef HAL_I2C_MODULE_ENABLED
 extern I2C_HandleTypeDef hi2c2;
-I2C::Instance I2C::instance2 = {.SCL = PF1,
-                                .SDA = PB11,
-                                .hi2c = &hi2c2,
-                                .instance = I2C2,
-                                .RX_DMA = DMA::Stream::DMA1Stream3,
-                                .TX_DMA = DMA::Stream::DMA1Stream4};
+I2C::Instance I2C::instance2 = {
+    .SCL = PF1,
+    .SDA = PB11,
+    .hi2c = &hi2c2,
+    .instance = I2C2,
+    .RX_DMA = DMA::Stream::DMA1Stream3,
+    .TX_DMA = DMA::Stream::DMA1Stream4
+};
 I2C::Peripheral I2C::i2c2 = I2C::Peripheral::peripheral2;
-unordered_map<I2C::Peripheral, I2C::Instance*> I2C::available_i2cs = {
-    {I2C::i2c2, &I2C::instance2}};
-unordered_map<uint32_t, uint32_t> I2C::available_speed_frequencies = {
-    {100, 0x60404E72}};
+unordered_map<I2C::Peripheral, I2C::Instance*> I2C::available_i2cs = {{I2C::i2c2, &I2C::instance2}};
+unordered_map<uint32_t, uint32_t> I2C::available_speed_frequencies = {{100, 0x60404E72}};
 #endif
 
 /************************************************
