@@ -9,14 +9,13 @@
 class Airgap : public AirgapBase {
     LinearSensor<float>* airgap_sensor;
 
-   public:
+public:
     Airgap(ST_LIB::ADCDomain::Instance& airgap_instance, float airgap_offset, float airgap_slope) {
-        airgap_sensor = new LinearSensor<float>(airgap_instance, airgap_slope, airgap_offset, &airgap_v);
+        airgap_sensor =
+            new LinearSensor<float>(airgap_instance, airgap_slope, airgap_offset, &airgap_v);
     }
 
-    void update() {
-        airgap_sensor->read();
-    }
+    void update() { airgap_sensor->read(); }
 
     void zeroing() {
         double airgap_sum = 0.0;

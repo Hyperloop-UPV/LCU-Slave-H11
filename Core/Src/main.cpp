@@ -1,14 +1,14 @@
 #include "main.h"
 #include "LCU_SLAVE.hpp"
 
-int main(void) { 
-  //Hard_fault_check();
-  
-  LCU_Slave::init();
+int main(void) {
+    // Hard_fault_check();
 
-  while (1) {
-    LCU_Slave::update();
-  }
+    LCU_Slave::init();
+
+    while (1) {
+        LCU_Slave::update();
+    }
 }
 
 void Error_Handler(void) {
@@ -16,4 +16,3 @@ void Error_Handler(void) {
     while (1) {
     }
 }
-
