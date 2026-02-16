@@ -23,6 +23,9 @@ inline void init() {
     g_led_operational = &led_operational;
     g_led_fault = &led_fault;
 
+    static auto& slave_fault = Board::instance_of<slave_fault_req>();
+    g_slave_fault = &slave_fault;
+
     // Create timer wrapper on stack
     static auto my_tim = get_timer_instance(Board, timer);
     my_tim.set_pwm_frequency(10'000); // 10khz

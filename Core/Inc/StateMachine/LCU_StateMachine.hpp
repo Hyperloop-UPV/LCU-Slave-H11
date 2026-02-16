@@ -20,15 +20,20 @@ inline void set_spi_error_counter_ptr(volatile uint32_t* ptr) { spi_error_counte
 // Operational State Machine
 // ============================================
 
-static constexpr auto state_spi_connecting =
-    make_state(OperationalState::SPI_CONNECTING, Transition{OperationalState::IDLE, []() {
-                                                                if (!command_packet ||
-                                                                    !spi_error_counter)
-                                                                    return false;
-                                                                // Transition to IDLE if connection
-                                                                // is stable (counter is 0)
-                                                                return *spi_error_counter == 0;
-                                                            }});
+static constexpr auto state_spi_connecting = make_state(
+    OperationalState::SPI_CONNECTING,
+    Transition{
+        OperationalState::IDLE,
+        []() {
+            if (!command_packet || !spi_error_counter)
+                return false;
+            // Transition to IDLE if connection
+            // is stable (counter is 0)
+            return *spi_error_counter == 0;
+        }
+    },
+    Transition{OperationalState::FAULT, []() { return LCU_Slave::master_fault_triggered; }}
+);
 
 static constexpr auto state_idle = make_state(
     OperationalState::IDLE,
@@ -45,7 +50,8 @@ static constexpr auto state_idle = make_state(
         OperationalState::FAULT,
         []() {
             // Go to fault if too many errors
-            return spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS);
+            bool spi_fault = spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS);
+            return spi_fault || LCU_Slave::master_fault_triggered;
         }
     }
 );
@@ -66,7 +72,7 @@ static constexpr auto state_levitating = make_state(
             bool hardware_fault = !LCU_Slave::g_lpu_array->is_all_ok();
             bool comms_fault =
                 spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS);
-            return hardware_fault || comms_fault;
+            return hardware_fault || comms_fault || LCU_Slave::master_fault_triggered;
         }
     }
 );
@@ -105,6 +111,7 @@ static constinit auto sm_operational = []() consteval {
     // Enter Fault: Safe State
     sm.add_enter_action(
         []() {
+            LCU_Slave::g_slave_fault->turn_on();
             LCU_Slave::g_led_fault->turn_on();
             Control::deinit();
             LCU_Slave::g_lpu_array->disable_all();

@@ -24,6 +24,16 @@ inline constexpr auto led_operational_req =
     ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_operational);
 inline constexpr auto led_fault_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_fault);
 
+bool master_fault_triggered = false;
+
+inline constexpr auto master_fault_req = ST_LIB::EXTIDomain::Device(
+    Pinout::master_fault,
+    ST_LIB::EXTIDomain::Trigger::RISING_EDGE,
+    []() { master_fault_triggered = true; }
+);
+inline constexpr auto slave_fault_req =
+    ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::slave_fault);
+
 // Timer and PWM configuration
 inline constexpr auto pwm_positive = ST_LIB::TimerPin(
     {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm1_1, .channel = ST_LIB::TimerChannel::CHANNEL_1}
@@ -68,6 +78,8 @@ inline constexpr auto slave_ready = ST_LIB::DigitalOutputDomain::DigitalOutput(P
 using Board = ST_LIB::Board<
     led_operational_req,
     led_fault_req,
+    master_fault_req,
+    slave_fault_req,
     timer,
     spi_req,
     slave_ready,
@@ -100,6 +112,8 @@ Airgap* g_airgap;
 LpuArrayType* g_lpu_array;
 ST_LIB::DigitalOutputDomain::Instance* g_led_operational;
 ST_LIB::DigitalOutputDomain::Instance* g_led_fault;
+ST_LIB::DigitalOutputDomain::Instance* g_slave_fault;
+ST_LIB::EXTIDomain::Instance* g_master_fault;
 
 } // namespace LCU_Slave
 
