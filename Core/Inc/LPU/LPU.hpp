@@ -18,8 +18,8 @@ public:
         float shunt_offset,
         float shunt_slope)
         : pwm_positive(pwm_positive), pwm_negative(pwm_negative),
-          vbat_sensor(adc_vbat_instance, vbat_slope, vbat_offset, &vbat_v),
-          shunt_sensor(adc_shunt_instance, shunt_slope, shunt_offset, &shunt_v) {
+          vbat_sensor(adc_vbat_instance, vbat_slope, vbat_offset, &vbat_v, vbat_moving_avg),
+          shunt_sensor(adc_shunt_instance, shunt_slope, shunt_offset, &shunt_v, shunt_moving_avg) {
 
         fault = false;
         ready = true;
@@ -114,8 +114,10 @@ private:
     PWMPositive& pwm_positive;
     PWMNegative& pwm_negative;
 
-    LinearSensor<volatile float> vbat_sensor;
-    LinearSensor<volatile float> shunt_sensor;
+    MovingAverage<10> shunt_moving_avg;
+    MovingAverage<10> vbat_moving_avg;
+    FilteredLinearSensor<volatile float, 10> vbat_sensor;
+    FilteredLinearSensor<volatile float, 10> shunt_sensor;
 };
 
 template <typename LPUTuple, typename EnablePinTuple> class LpuArray;
