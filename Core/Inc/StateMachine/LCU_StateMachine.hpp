@@ -1,5 +1,5 @@
-#ifndef STATE_MACHINE_HPP
-#define STATE_MACHINE_HPP
+#ifndef LCU_STATE_MACHINE_HPP
+#define LCU_STATE_MACHINE_HPP
 
 #include "ST-LIB_LOW/StateMachine/StateMachine.hpp"
 #include "LCU_SLAVE_Types.hpp"
@@ -143,4 +143,4 @@ inline void start() { sm_operational.start(); }
 inline void update() { sm_operational.check_transitions(); }
 } // namespace LCU_SM
 
-#endif // STATE_MACHINE_HPP
+#endif // LCU_STATE_MACHINE_HPP

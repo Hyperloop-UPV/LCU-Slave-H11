@@ -3,7 +3,7 @@
 
 #include "LCU_SLAVE_Types.hpp"
 #include "ConfigShared.hpp"
-#include "StateMachine/StateMachine.hpp"
+#include "StateMachine/LCU_StateMachine.hpp"
 #include "Communications/Communications.hpp"
 
 namespace LCU_Slave {
