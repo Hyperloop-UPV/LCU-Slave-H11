@@ -54,12 +54,11 @@ inline void update() {
     update_status();
 
     // Watchdog for SPI
+    
     if (operation_flag) {
-        spi_timeout_counter++;
-        if (spi_timeout_counter > LCU_Slave::SPI_TIMEOUT_LIMIT) {
+        if (g_spi->was_aborted()) {
+            g_spi->clear_abort_flag();
             spi_error_counter++;
-
-            // Reset state machine (SPI is already reset on error)
             operation_flag = false;
             send_flag = false;
             spi_flag = false;
@@ -67,6 +66,19 @@ inline void update() {
             g_slave_ready->turn_off();
             g_spi->set_software_nss(false);
         }
+        // spi_timeout_counter++;
+        // if (spi_timeout_counter > LCU_Slave::SPI_TIMEOUT_LIMIT) {
+        //     spi_error_counter++;
+        //     spi_timeout_counter = 0;
+
+        //     // Reset state machine (SPI is already reset on error)
+        //     operation_flag = false;
+        //     send_flag = false;
+        //     spi_flag = false;
+        //     receive_flag = false;
+        //     g_slave_ready->turn_off();
+        //     g_spi->set_software_nss(false);
+        // }
     } else {
         spi_timeout_counter = 0;
     }
@@ -84,6 +96,9 @@ inline void update() {
         g_slave_ready->turn_off();
         g_spi->set_software_nss(false);
         Frame::update_rx(&receive_flag);
+        while (!receive_flag) { // Busy wait for synchronization
+            MDMA::update();
+        }
     } else if (receive_flag) {
         receive_flag = false;
         operation_flag = false;

@@ -50,7 +50,7 @@ static constexpr auto state_idle = make_state(
         OperationalState::FAULT,
         []() {
             // Go to fault if too many errors
-            bool spi_fault = spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS);
+            bool spi_fault = false; //spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS);
             return spi_fault || LCU_Slave::master_fault_triggered;
         }
     }
@@ -70,9 +70,9 @@ static constexpr auto state_levitating = make_state(
         OperationalState::FAULT,
         []() {
             bool hardware_fault = !LCU_Slave::g_lpu_array->is_all_ok();
-            bool comms_fault =
-                spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS);
-            return hardware_fault || comms_fault || LCU_Slave::master_fault_triggered;
+            // bool comms_fault =
+            //     spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS);
+            return hardware_fault || /*comms_fault ||*/ LCU_Slave::master_fault_triggered;
         }
     }
 );
@@ -92,7 +92,7 @@ static constinit auto sm_operational = []() consteval {
 
     sm.add_enter_action(
         []() {
-            LCU_Slave::g_led_fault->turn_on();
+            LCU_Slave::g_led_operational->turn_on();
             Control::init();
             LCU_Slave::g_lpu_array->enable_all();
         },
@@ -101,7 +101,7 @@ static constinit auto sm_operational = []() consteval {
 
     sm.add_exit_action(
         []() {
-            LCU_Slave::g_led_fault->turn_off();
+            LCU_Slave::g_led_operational->turn_off();
             Control::deinit();
             LCU_Slave::g_lpu_array->disable_all();
         },
@@ -115,6 +115,8 @@ static constinit auto sm_operational = []() consteval {
             LCU_Slave::g_led_fault->turn_on();
             Control::deinit();
             LCU_Slave::g_lpu_array->disable_all();
+            ErrorHandler("Entered Fault State");
+            while (1);
         },
         state_fault
     );
@@ -129,11 +131,11 @@ static constinit auto sm_operational = []() consteval {
     );
 
     // Current Control
-    sm.add_cyclic_action([]() { Control::current_update(0.0f); }, 200us, state_levitating);
+    sm.add_cyclic_action([]() { Control::current_update(LCU_Slave::g_lpu->shunt_v); }, 200us, state_levitating);
 
     // Levitation Control
     sm.add_cyclic_action(
-        []() { Control::levitation_update(0.0f, 0.0f); },
+        []() { Control::levitation_update(LCU_Slave::g_airgap->airgap_v, command_packet->desired_distance); },
         1000us,
         state_levitating
     );
