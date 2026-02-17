@@ -32,12 +32,7 @@ uint32_t spi_timeout_counter = 0;
 inline void update_status() {
     auto& status = comms.status_packet;
 
-    // Ensure start/end bytes are correct
-    status.start_byte = StatusPacket::START_BYTE;
-    status.end_byte = StatusPacket::END_BYTE;
-
     status.control_state = static_cast<uint8_t>(LCU_SM::sm_operational.get_current_state());
-    status.acks = comms.command_packet.commands;
 }
 
 // ============================================
@@ -86,11 +81,13 @@ inline void update() {
     if (!operation_flag) {
         operation_flag = true;
         Frame::update_tx(&send_flag);
+
     } else if (send_flag) {
         send_flag = false;
         g_spi->transceive(Frame::tx_buffer, Frame::rx_buffer, &spi_flag);
         g_spi->set_software_nss(true);
         g_slave_ready->turn_on();
+
     } else if (spi_flag) {
         spi_flag = false;
         g_slave_ready->turn_off();
@@ -99,6 +96,7 @@ inline void update() {
         while (!receive_flag) { // Busy wait for synchronization
             MDMA::update();
         }
+
     } else if (receive_flag) {
         receive_flag = false;
         operation_flag = false;
@@ -110,8 +108,6 @@ inline void update() {
             cmd.end_byte != CommandPacket::END_BYTE) {
 
             spi_error_counter++;
-            // Invalid packet, ignore commands to prevent acting on garbage data
-            comms.command_packet.commands = CommandFlags::NONE;
 
             if (spi_error_counter > LCU_Slave::MAX_SPI_ERRORS) {
                 spi_error_counter = LCU_Slave::MAX_SPI_ERRORS;

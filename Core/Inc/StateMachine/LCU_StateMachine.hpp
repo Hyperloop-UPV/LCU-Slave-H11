@@ -42,7 +42,7 @@ static constexpr auto state_idle = make_state(
         []() {
             if (!command_packet)
                 return false;
-            auto cmds = command_packet->commands;
+            auto cmds = command_packet->flags;
             return (bool)((cmds & CommandFlags::LEVITATE) != CommandFlags::NONE);
         }
     },
@@ -61,8 +61,8 @@ static constexpr auto state_levitating = make_state(
     Transition{
         OperationalState::IDLE,
         []() {
-            auto cmds = command_packet->commands;
-            bool stop_requested = (cmds & CommandFlags::STOP_LEVITATE) != CommandFlags::NONE;
+            auto cmds = command_packet->flags;
+            bool stop_requested = (cmds & CommandFlags::LEVITATE) == CommandFlags::NONE;
             return stop_requested;
         }
     },
@@ -135,7 +135,7 @@ static constinit auto sm_operational = []() consteval {
 
     // Levitation Control
     sm.add_cyclic_action(
-        []() { Control::levitation_update(LCU_Slave::g_airgap->airgap_v, command_packet->desired_distance); },
+        []() { Control::levitation_update(LCU_Slave::g_airgap->airgap_v, command_packet->levitate.desired_distance); },
         1000us,
         state_levitating
     );
