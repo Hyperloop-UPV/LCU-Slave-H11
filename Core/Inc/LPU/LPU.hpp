@@ -27,16 +27,9 @@ public:
     }
 
     bool update() {
-        if (state == State::Fault)
-            return false;
-        if (state != State::Running)
-            return true;
         vbat_sensor.read();
         shunt_sensor.read();
 
-        // Protection Logic
-        if (std::abs(shunt_v) > 20.0f)
-            return false;
         return true;
     }
 
