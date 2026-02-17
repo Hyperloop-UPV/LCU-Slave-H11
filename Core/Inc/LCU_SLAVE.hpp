@@ -62,7 +62,7 @@ inline void init() {
     g_lpu_array = &my_lpu_array;
 
     // SPI
-    static auto my_spi = Board::instance_of<spi_req>();
+    static auto& my_spi = Board::instance_of<spi_req>();
     static auto my_spi_wrapper = SpiType(my_spi);
     my_spi_wrapper.set_software_nss(false); // We'll control NSS via GPIO
     Communications::g_spi = &my_spi_wrapper;
