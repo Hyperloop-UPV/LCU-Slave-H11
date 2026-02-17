@@ -65,8 +65,8 @@ file(GLOB_RECURSE SOURCE_H    ${CMAKE_SOURCE_DIR}/Core/*.h)
 file(GLOB_RECURSE SOURCE_HPP  ${CMAKE_SOURCE_DIR}/Core/*.hpp)
 
 # Add Simulink-generated control code
-file(GLOB CONTROL_C ${CONTROL_DIR}/STM32H7CodeGenerator/*.c)
-file(GLOB CONTROL_H ${CONTROL_DIR}/STM32H7CodeGenerator/*.h)
+file(GLOB CONTROL_C ${CONTROL_DIR}/*.c)
+file(GLOB CONTROL_H ${CONTROL_DIR}/*.h)
 
 file(GLOB_RECURSE GENERATOR_JSONS
   CONFIGURE_DEPENDS
@@ -190,7 +190,7 @@ if(CMAKE_CROSSCOMPILING)
   target_include_directories(${EXECUTABLE} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc
     ${SHARED_DIR}/Inc
-    ${CONTROL_DIR}/STM32H7CodeGenerator
+    ${CONTROL_DIR}
   )
 
   target_link_options(${EXECUTABLE} PRIVATE
