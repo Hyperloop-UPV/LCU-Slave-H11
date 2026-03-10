@@ -81,6 +81,9 @@ inline void update() {
     if (!operation_flag) {
         operation_flag = true;
         Frame::update_tx(&send_flag);
+        while (!send_flag) { // Busy wait for synchronization
+            MDMA::update();
+        }
 
     } else if (send_flag) {
         send_flag = false;

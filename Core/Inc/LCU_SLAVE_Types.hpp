@@ -115,6 +115,8 @@ ST_LIB::DigitalOutputDomain::Instance* g_led_fault;
 ST_LIB::DigitalOutputDomain::Instance* g_slave_fault;
 ST_LIB::EXTIDomain::Instance* g_master_fault;
 
+uint32_t count = 0;
+
 } // namespace LCU_Slave
 
 #endif // LCU_SLAVE_TYPES_HPP
