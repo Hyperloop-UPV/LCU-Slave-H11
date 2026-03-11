@@ -81,9 +81,6 @@ inline void update() {
     if (!operation_flag) {
         operation_flag = true;
         Frame::update_tx(&send_flag);
-        while (!send_flag) { // Busy wait for synchronization
-            MDMA::update();
-        }
 
     } else if (send_flag) {
         send_flag = false;
@@ -96,10 +93,7 @@ inline void update() {
         g_slave_ready->turn_off();
         g_spi->set_software_nss(false);
         Frame::update_rx(&receive_flag);
-        while (!receive_flag) { // Busy wait for synchronization
-            MDMA::update();
-        }
-
+        
     } else if (receive_flag) {
         receive_flag = false;
         operation_flag = false;
