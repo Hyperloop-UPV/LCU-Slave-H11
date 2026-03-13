@@ -123,6 +123,14 @@ static constinit auto sm_operational = []() consteval {
 
     sm.add_cyclic_action(
         []() {
+            __NOP();
+        },
+        500ms,
+        state_levitating
+    );
+
+    sm.add_cyclic_action(
+        []() {
             LCU_Slave::g_lpu_array->update_all();
             LCU_Slave::g_airgap->update();
         },
@@ -131,12 +139,24 @@ static constinit auto sm_operational = []() consteval {
     );
 
     // Current Control
-    sm.add_cyclic_action([]() { Control::current_update(LCU_Slave::g_lpu->shunt_v); }, 200us, state_levitating);
+    sm.add_cyclic_action([]() {
+        Control::current_update(LCU_Slave::g_lpu->shunt_v);
+    }, 200us, state_levitating);
 
     // Levitation Control
     sm.add_cyclic_action(
-        []() { Control::levitation_update(LCU_Slave::g_airgap->airgap_v, command_packet->levitate.desired_distance); },
+        []() {
+            Control::levitation_update(LCU_Slave::g_airgap->airgap_v, command_packet->levitate.desired_distance);
+        },
         1000us,
+        state_levitating
+    );
+
+    sm.add_cyclic_action(
+        []() {
+            __NOP();
+        },
+        500ms,
         state_levitating
     );
 
