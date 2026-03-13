@@ -23,7 +23,7 @@ public:
               adc_shunt_instance,
               shunt_slope,
               shunt_offset,
-              &shunt_v /*, 
+              &shunt_v /*,
               shunt_moving_avg*/
           ) {
 

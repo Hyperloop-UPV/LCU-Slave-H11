@@ -77,10 +77,11 @@ static constexpr auto state_levitating = make_state(
     Transition{
         OperationalState::FAULT,
         []() {
-            bool hardware_fault = !LCU_Slave::g_lpu_array->is_all_ok();
-            // bool comms_fault =
-            //     spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS);
-            return hardware_fault || /*comms_fault ||*/ LCU_Slave::master_fault_triggered;
+            return !LCU_Slave::g_lpu_array->is_all_ok() ||
+#ifdef USE_SPI_ERROR
+                   (spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS)) ||
+#endif
+                   LCU_Slave::master_fault_triggered;
         }
     }
 );
@@ -130,7 +131,11 @@ static constinit auto sm_operational = []() consteval {
         state_fault
     );
 
-    sm.add_cyclic_action([]() { __NOP(); }, 500ms, state_levitating);
+    sm.add_cyclic_action(
+        []() { __NOP(); },
+        500ms,
+        state_levitating
+    ); // Dummy action that makes things work, somehow
 
     sm.add_cyclic_action(
         []() {
@@ -160,7 +165,11 @@ static constinit auto sm_operational = []() consteval {
         state_levitating
     );
 
-    sm.add_cyclic_action([]() { __NOP(); }, 500ms, state_levitating);
+    sm.add_cyclic_action(
+        []() { __NOP(); },
+        500ms,
+        state_levitating
+    ); // Dummy action that makes things work, somehow
 
     return sm;
 }();
@@ -172,6 +181,7 @@ static constinit auto sm_operational = []() consteval {
 inline void start() { sm_operational.start(); }
 
 inline void update() { sm_operational.check_transitions(); }
+
 } // namespace LCU_SM
 
 #endif // LCU_STATE_MACHINE_HPP
