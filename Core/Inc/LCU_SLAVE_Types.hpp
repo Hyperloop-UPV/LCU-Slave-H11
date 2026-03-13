@@ -17,8 +17,10 @@ template <typename LPUTuple, typename EnablePinTuple> class LpuArray;
 
 namespace LCU_Slave {
 
+#ifdef USE_SPI_ERROR
 constexpr uint32_t MAX_SPI_ERRORS = 10;
-constexpr uint32_t SPI_TIMEOUT_LIMIT = 100;
+constexpr uint32_t SPI_TIMEOUT_LIMIT = 1000;
+#endif
 
 inline constexpr auto led_operational_req =
     ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_operational);

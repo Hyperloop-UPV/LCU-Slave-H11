@@ -18,15 +18,11 @@ namespace LCU_Slave {
 inline void init() {
     Board::init();
 
-    static auto& led_operational = Board::instance_of<led_operational_req>();
-    static auto& led_fault = Board::instance_of<led_fault_req>();
-    g_led_operational = &led_operational;
-    g_led_fault = &led_fault;
+    g_led_operational = &Board::instance_of<led_operational_req>();
+    g_led_fault = &Board::instance_of<led_fault_req>();
 
-    static auto& slave_fault = Board::instance_of<slave_fault_req>();
-    g_slave_fault = &slave_fault;
+    g_slave_fault = &Board::instance_of<slave_fault_req>();
 
-    // Create timer wrapper on stack
     static auto my_tim = get_timer_instance(Board, timer);
     my_tim.set_pwm_frequency(10'000); // 10khz
 
@@ -34,18 +30,15 @@ inline void init() {
     static auto my_pwm_negative = my_tim.template get_pwm<pwm_negative>();
     g_pwm_positive = &my_pwm_positive;
     g_pwm_negative = &my_pwm_negative;
+    
     g_enable_pin = &Board::instance_of<en_buff_1>();
-
-    auto& adc_vbat_instance = Board::instance_of<adc_vbat>();
-    auto& adc_shunt_instance = Board::instance_of<adc_shunt>();
-    auto& adc_airgap_instance = Board::instance_of<adc_airgap>();
 
     // Create LPU
     static auto my_lpu = LPUType(
-        my_pwm_positive,
-        my_pwm_negative,
-        adc_vbat_instance,
-        adc_shunt_instance,
+        *g_pwm_positive,
+        *g_pwm_negative,
+        Board::instance_of<adc_vbat>(),
+        Board::instance_of<adc_shunt>(),
         0.0f,
         1.0f,
         0.0f,
@@ -54,7 +47,7 @@ inline void init() {
     g_lpu = &my_lpu;
 
     // Create Airgap
-    static auto my_airgap = Airgap(adc_airgap_instance, 0.0f, 1.0f);
+    static auto my_airgap = Airgap(Board::instance_of<adc_airgap>(), 0.0f, 1.0f);
     g_airgap = &my_airgap;
 
     // Create LPU Array
@@ -62,26 +55,21 @@ inline void init() {
     g_lpu_array = &my_lpu_array;
 
     // SPI
-    static auto& my_spi = Board::instance_of<spi_req>();
-    static auto my_spi_wrapper = SpiType(my_spi);
+    static auto my_spi_wrapper = SpiType(Board::instance_of<spi_req>());
     my_spi_wrapper.set_software_nss(false); // We'll control NSS via GPIO
     Communications::g_spi = &my_spi_wrapper;
 
-    static auto my_slave_ready = Board::instance_of<slave_ready>();
-    Communications::g_slave_ready = &my_slave_ready;
+    Communications::g_slave_ready = &Board::instance_of<slave_ready>();
     Communications::g_slave_ready->turn_off();
 
     Scheduler::start();
     MDMA::start();
 
-    // Initialize communications
     Communications::init();
 
-    // Initialize state machine
     LCU_SM::set_command_packet(&Communications::comms.command_packet);
     LCU_SM::start();
 
-    // Initialize frame (TX: LPU + Airgap + Status, RX: LPU + Commands)
     Frame::init(Communications::comms, *g_lpu, *g_airgap, Communications::comms, *g_lpu);
 }
 
@@ -89,8 +77,8 @@ inline void init() {
 // Main Loop
 // ============================================
 inline void update() {
-    Communications::update(); // Handles Frame RX/TX and command processing
-    LCU_SM::update();         // Update state machine transitions
+    Communications::update();
+    LCU_SM::update();
     Scheduler::update();
     MDMA::update();
 }

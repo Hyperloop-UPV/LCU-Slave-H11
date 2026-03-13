@@ -11,10 +11,14 @@ namespace LCU_SM {
 enum class OperationalState : uint8_t { SPI_CONNECTING = 0, IDLE = 1, LEVITATING = 2, FAULT = 3 };
 
 inline volatile CommandPacket* command_packet = nullptr;
+#ifdef USE_SPI_ERROR
 inline volatile uint32_t* spi_error_counter = nullptr;
+#endif
 
 inline void set_command_packet(volatile CommandPacket* ptr) { command_packet = ptr; }
+#ifdef USE_SPI_ERROR
 inline void set_spi_error_counter_ptr(volatile uint32_t* ptr) { spi_error_counter = ptr; }
+#endif
 
 // ============================================
 // Operational State Machine
@@ -25,11 +29,13 @@ static constexpr auto state_spi_connecting = make_state(
     Transition{
         OperationalState::IDLE,
         []() {
-            if (!command_packet || !spi_error_counter)
-                return false;
+            #ifdef USE_SPI_ERROR
             // Transition to IDLE if connection
             // is stable (counter is 0)
             return *spi_error_counter == 0;
+            #else
+            return true;
+            #endif
         }
     },
     Transition{OperationalState::FAULT, []() { return LCU_Slave::master_fault_triggered; }}
@@ -49,9 +55,11 @@ static constexpr auto state_idle = make_state(
     Transition{
         OperationalState::FAULT,
         []() {
-            // Go to fault if too many errors
-            bool spi_fault = false; //spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS);
-            return spi_fault || LCU_Slave::master_fault_triggered;
+            return 
+                #ifdef USE_SPI_ERROR
+                (spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS)) ||
+                #endif
+                LCU_Slave::master_fault_triggered;
         }
     }
 );
