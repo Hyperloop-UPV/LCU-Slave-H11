@@ -7,13 +7,18 @@
 #include "HALAL/Services/ADC/NewADC.hpp"
 
 class Airgap : public AirgapBase {
-    // MovingAverage<10> airgap_moving_avg;cd 
+    // MovingAverage<10> airgap_moving_avg;
     LinearSensor<volatile float> airgap_sensor;
 
 public:
-    Airgap(ST_LIB::ADCDomain::Instance& airgap_instance, float airgap_offset, float airgap_slope) :
-        airgap_sensor(airgap_instance, airgap_slope, airgap_offset, &airgap_v/*, airgap_moving_avg*/) {
-    }
+    Airgap(ST_LIB::ADCDomain::Instance& airgap_instance, float airgap_offset, float airgap_slope)
+        : airgap_sensor(
+              airgap_instance,
+              airgap_slope,
+              airgap_offset,
+              &airgap_v /*,
+              airgap_moving_avg*/
+          ) {}
 
     void update() { airgap_sensor.read(); }
 

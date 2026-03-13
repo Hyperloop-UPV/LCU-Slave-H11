@@ -99,6 +99,6 @@ tools/*.bin
 *.log
 
 # Generated packet headers
-/Core/Inc/Communications/Packets/DataPackets.hpp
-/Core/Inc/Communications/Packets/OrderPackets.hpp
+Core/Inc/Communications/Packets/DataPackets.hpp
+Core/Inc/Communications/Packets/OrderPackets.hpp
 Core/Src/Runes/generated_metadata.cpp

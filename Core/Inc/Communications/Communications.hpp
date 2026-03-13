@@ -29,7 +29,6 @@ uint32_t spi_timeout_counter = 0;
 #endif // USE_SPI_TIMEOUT
 #endif // USE_SPI_ERROR
 
-
 // ============================================
 // Status Reporting
 // ============================================
@@ -39,23 +38,28 @@ inline void update_status() {
     status.control_state = static_cast<uint8_t>(LCU_SM::sm_operational.get_current_state());
 }
 
-
 // ============================================
 // Main Update
 // ============================================
 
 inline void init() {
-    LCU_Slave::Frame::init(comms, *LCU_Slave::g_lpu, *LCU_Slave::g_airgap, comms, *LCU_Slave::g_lpu);
+    LCU_Slave::Frame::init(
+        comms,
+        *LCU_Slave::g_lpu,
+        *LCU_Slave::g_airgap,
+        comms,
+        *LCU_Slave::g_lpu
+    );
     LCU_SM::set_command_packet(&comms.command_packet);
-    #ifdef USE_SPI_ERROR
+#ifdef USE_SPI_ERROR
     LCU_SM::set_spi_error_counter_ptr(&spi_error_counter);
-    #endif
+#endif
 }
 
 inline void update() {
     update_status();
 
-    #ifdef USE_SPI_ERROR
+#ifdef USE_SPI_ERROR
     if (operation_flag) {
         if (g_spi->was_aborted()) {
             g_spi->clear_abort_flag();
@@ -68,8 +72,8 @@ inline void update() {
             g_spi->set_software_nss(false);
         }
     }
-    
-    #ifdef USE_SPI_TIMEOUT
+
+#ifdef USE_SPI_TIMEOUT
     if (operation_flag) {
         spi_timeout_counter++;
         if (spi_timeout_counter > LCU_Slave::SPI_TIMEOUT_LIMIT) {
@@ -87,8 +91,8 @@ inline void update() {
     } else {
         spi_timeout_counter = 0;
     }
-    #endif // USE_SPI_TIMEOUT
-    #endif // USE_SPI_ERROR
+#endif // USE_SPI_TIMEOUT
+#endif // USE_SPI_ERROR
 
     if (!operation_flag) {
         operation_flag = true;
@@ -105,9 +109,10 @@ inline void update() {
         g_slave_ready->turn_off();
         g_spi->set_software_nss(false);
 
-        #ifdef USE_SPI_ERROR
+#ifdef USE_SPI_ERROR
         // Preemptive packet validation
-        if (((LCU_Slave::Frame::rx_buffer[1] << 8) + LCU_Slave::Frame::rx_buffer[0]) != CommandPacket::START_BYTE) {
+        if (((LCU_Slave::Frame::rx_buffer[1] << 8) + LCU_Slave::Frame::rx_buffer[0]) !=
+            CommandPacket::START_BYTE) {
             spi_error_counter++;
 
             if (spi_error_counter > LCU_Slave::MAX_SPI_ERRORS) {
@@ -120,16 +125,15 @@ inline void update() {
             if (spi_error_counter > 0)
                 spi_error_counter--;
         }
-        #else
+#else
         LCU_Slave::Frame::update_rx(&receive_flag);
-        #endif
+#endif
 
-        
     } else if (receive_flag) {
         receive_flag = false;
         operation_flag = false;
 
-        #ifdef USE_SPI_ERROR
+#ifdef USE_SPI_ERROR
         // Packet Validation
         auto& cmd = comms.command_packet;
 
@@ -146,7 +150,7 @@ inline void update() {
             if (spi_error_counter > 0)
                 spi_error_counter--;
         }
-        #endif
+#endif
     }
 }
 } // namespace Communications

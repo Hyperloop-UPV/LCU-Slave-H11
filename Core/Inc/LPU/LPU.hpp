@@ -18,8 +18,14 @@ public:
         float shunt_offset,
         float shunt_slope)
         : pwm_positive(pwm_positive), pwm_negative(pwm_negative),
-          vbat_sensor(adc_vbat_instance, vbat_slope, vbat_offset, &vbat_v/*, vbat_moving_avg*/),
-          shunt_sensor(adc_shunt_instance, shunt_slope, shunt_offset, &shunt_v/*, shunt_moving_avg*/) {
+          vbat_sensor(adc_vbat_instance, vbat_slope, vbat_offset, &vbat_v /*, vbat_moving_avg*/),
+          shunt_sensor(
+              adc_shunt_instance,
+              shunt_slope,
+              shunt_offset,
+              &shunt_v /*, 
+              shunt_moving_avg*/
+          ) {
 
         fault = false;
         ready = true;

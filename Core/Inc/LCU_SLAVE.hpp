@@ -30,7 +30,7 @@ inline void init() {
     static auto my_pwm_negative = my_tim.template get_pwm<pwm_negative>();
     g_pwm_positive = &my_pwm_positive;
     g_pwm_negative = &my_pwm_negative;
-    
+
     g_enable_pin = &Board::instance_of<en_buff_1>();
 
     // Create LPU

@@ -29,13 +29,13 @@ static constexpr auto state_spi_connecting = make_state(
     Transition{
         OperationalState::IDLE,
         []() {
-            #ifdef USE_SPI_ERROR
+#ifdef USE_SPI_ERROR
             // Transition to IDLE if connection
             // is stable (counter is 0)
             return *spi_error_counter == 0;
-            #else
+#else
             return true;
-            #endif
+#endif
         }
     },
     Transition{OperationalState::FAULT, []() { return LCU_Slave::master_fault_triggered; }}
@@ -55,10 +55,10 @@ static constexpr auto state_idle = make_state(
     Transition{
         OperationalState::FAULT,
         []() {
-            return 
-                #ifdef USE_SPI_ERROR
+            return
+#ifdef USE_SPI_ERROR
                 (spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS)) ||
-                #endif
+#endif
                 LCU_Slave::master_fault_triggered;
         }
     }
@@ -124,18 +124,13 @@ static constinit auto sm_operational = []() consteval {
             Control::deinit();
             LCU_Slave::g_lpu_array->disable_all();
             ErrorHandler("Entered Fault State");
-            while (1);
+            while (1)
+                ;
         },
         state_fault
     );
 
-    sm.add_cyclic_action(
-        []() {
-            __NOP();
-        },
-        500ms,
-        state_levitating
-    );
+    sm.add_cyclic_action([]() { __NOP(); }, 500ms, state_levitating);
 
     sm.add_cyclic_action(
         []() {
@@ -147,26 +142,25 @@ static constinit auto sm_operational = []() consteval {
     );
 
     // Current Control
-    sm.add_cyclic_action([]() {
-        Control::current_update(LCU_Slave::g_lpu->shunt_v);
-    }, 200us, state_levitating);
+    sm.add_cyclic_action(
+        []() { Control::current_update(LCU_Slave::g_lpu->shunt_v); },
+        200us,
+        state_levitating
+    );
 
     // Levitation Control
     sm.add_cyclic_action(
         []() {
-            Control::levitation_update(LCU_Slave::g_airgap->airgap_v, command_packet->levitate.desired_distance);
+            Control::levitation_update(
+                LCU_Slave::g_airgap->airgap_v,
+                command_packet->levitate.desired_distance
+            );
         },
         1000us,
         state_levitating
     );
 
-    sm.add_cyclic_action(
-        []() {
-            __NOP();
-        },
-        500ms,
-        state_levitating
-    );
+    sm.add_cyclic_action([]() { __NOP(); }, 500ms, state_levitating);
 
     return sm;
 }();
