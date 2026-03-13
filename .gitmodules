@@ -7,3 +7,6 @@
 [submodule "deps/LCU-Control-H11"]
 	path = deps/LCU-Control-H11
 	url = https://github.com/Hyperloop-UPV/LCU-Control-H11.git
+[submodule "deps/LCU-Shared-H11"]
+	path = deps/LCU-Shared-H11
+	url = https://github.com/Hyperloop-UPV/LCU-Shared-H11.git
