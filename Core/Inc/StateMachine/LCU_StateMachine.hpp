@@ -8,7 +8,7 @@
 
 namespace LCU_SM {
 
-enum class OperationalState : uint8_t { SPI_CONNECTING = 0, IDLE = 1, LEVITATING = 2, FAULT = 3 };
+enum class OperationalState : uint8_t { SPI_CONNECTING = 0, IDLE = 1, LEVITATING = 2, FAULT = 3, CURRENT_CONTROL = 4 };
 
 inline volatile CommandPacket* command_packet = nullptr;
 #ifdef USE_SPI_ERROR
@@ -23,6 +23,14 @@ inline void set_spi_error_counter_ptr(volatile uint32_t* ptr) { spi_error_counte
 // ============================================
 // Operational State Machine
 // ============================================
+
+auto check_fault = []() {
+    return !LCU_Slave::g_lpu_array->is_all_ok() ||
+#ifdef USE_SPI_ERROR
+            (spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS)) ||
+#endif
+            LCU_Slave::master_fault_triggered;
+};
 
 static constexpr auto state_spi_connecting = make_state(
     OperationalState::SPI_CONNECTING,
@@ -46,21 +54,15 @@ static constexpr auto state_idle = make_state(
     Transition{
         OperationalState::LEVITATING,
         []() {
-            if (!command_packet)
-                return false;
             auto cmds = command_packet->flags;
-            return (bool)((cmds & CommandFlags::LEVITATE) != CommandFlags::NONE);
+            return  bool(cmds & CommandFlags::LEVITATE) ||
+                    bool(cmds & CommandFlags::CURRENT_CONTROL) ||
+                    bool(cmds & CommandFlags::CONTROL_LOOP);
         }
     },
     Transition{
         OperationalState::FAULT,
-        []() {
-            return
-#ifdef USE_SPI_ERROR
-                (spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS)) ||
-#endif
-                LCU_Slave::master_fault_triggered;
-        }
+        check_fault
     }
 );
 
@@ -70,23 +72,19 @@ static constexpr auto state_levitating = make_state(
         OperationalState::IDLE,
         []() {
             auto cmds = command_packet->flags;
-            bool stop_requested = (cmds & CommandFlags::LEVITATE) == CommandFlags::NONE;
+            bool stop_requested =   !bool(cmds & CommandFlags::LEVITATE) &&
+                                    !bool(cmds & CommandFlags::CURRENT_CONTROL);
             return stop_requested;
         }
     },
     Transition{
         OperationalState::FAULT,
-        []() {
-            return !LCU_Slave::g_lpu_array->is_all_ok() ||
-#ifdef USE_SPI_ERROR
-                   (spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS)) ||
-#endif
-                   LCU_Slave::master_fault_triggered;
-        }
+        check_fault
     }
 );
 
 static constexpr auto state_fault = make_state(OperationalState::FAULT);
+
 
 static constinit auto sm_operational = []() consteval {
     auto sm = make_state_machine(
@@ -131,6 +129,8 @@ static constinit auto sm_operational = []() consteval {
         state_fault
     );
 
+    // Levitation Control
+
     sm.add_cyclic_action(
         []() { __NOP(); },
         500ms,
@@ -146,20 +146,23 @@ static constinit auto sm_operational = []() consteval {
         state_levitating
     );
 
-    // Current Control
     sm.add_cyclic_action(
-        []() { Control::current_update(LCU_Slave::g_lpu->shunt_v); },
+        []() {
+            auto target_voltage = Control::current_update(LCU_Slave::g_lpu->shunt_v);
+            LCU_Slave::g_lpu->set_out_voltage(target_voltage);
+        },
         200us,
         state_levitating
     );
 
-    // Levitation Control
     sm.add_cyclic_action(
         []() {
-            Control::levitation_update(
-                LCU_Slave::g_airgap->airgap_v,
-                command_packet->levitate.desired_distance
-            );
+            if (bool(command_packet->flags & CommandFlags::LEVITATE)) {
+                Control::levitation_update(
+                    LCU_Slave::g_airgap->airgap_v,
+                    command_packet->levitate.desired_distance
+                );
+            }
         },
         1000us,
         state_levitating
@@ -180,7 +183,20 @@ static constinit auto sm_operational = []() consteval {
 
 inline void start() { sm_operational.start(); }
 
-inline void update() { sm_operational.check_transitions(); }
+inline void update() {
+    sm_operational.check_transitions();
+
+    // General commands
+    auto cmds = command_packet->flags;
+    if (bool(cmds & CommandFlags::RESET_SLAVE)) {
+        HAL_NVIC_SystemReset();
+    }
+    if (bool(cmds & CommandFlags::PWM)) {
+        // Should later change it to actually set the duty of the desired lpu
+        sm_operational.force_change_state(size_t(OperationalState::IDLE));
+        LCU_Slave::g_lpu->set_duty(command_packet->pwm.duty_cycle);
+    }
+}
 
 } // namespace LCU_SM
 
