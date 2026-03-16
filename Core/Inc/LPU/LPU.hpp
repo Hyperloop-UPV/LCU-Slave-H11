@@ -26,24 +26,30 @@ public:
               &shunt_v /*,
               shunt_moving_avg*/
           ) {
-
-        fault = false;
-        ready = true;
-        state = State::Running;
     }
 
     bool update() {
-        vbat_sensor.read();
+        if (is_fixed_vbat) {
+            vbat_v = fixed_vbat;
+        } else {
+            vbat_sensor.read();
+        }
         shunt_sensor.read();
+
+        if (is_fixed_duty_cycle) {
+            set_duty(fixed_duty_cycle);
+        }
 
         return true;
     }
 
     /**
      * @brief Set the duty cycle based on the desired output voltage and the current battery voltage
-     * (vbat_v).
      */
     bool set_out_voltage(float voltage) {
+        if (is_fixed_duty_cycle) {
+            return true;
+        }
         // Avoid division by zero, but this shouldn't happen I think?
         if (vbat_v < 0.1f) {
             set_duty(0.0f);
@@ -64,32 +70,28 @@ public:
             pwm_positive.set_duty_cycle(0.0f);
             pwm_negative.set_duty_cycle(-duty);
         }
+        duty_cycle = duty;
     }
 
     bool enable() {
+        #ifdef USE_LPU_READY
         if (!ready)
             return false;
+        #endif
+        #ifdef USE_LPU_FAULT
         if (fault)
             return false;
+        #endif
         pwm_positive.turn_on();
         pwm_negative.turn_on();
-        state = State::Running;
+        is_enabled = true;
         return true;
     }
 
     bool disable() {
         pwm_positive.turn_off();
         pwm_negative.turn_off();
-        if (state == State::Running) {
-            if (fault)
-                state = State::Fault;
-            else if (ready)
-                state = State::Ready;
-            else
-                state = State::Idle;
-        } else {
-            return false;
-        }
+        is_enabled = false;
         return true;
     }
 

@@ -8,9 +8,8 @@
 
 namespace LCU_SM {
 
-enum class OperationalState : uint8_t { SPI_CONNECTING = 0, IDLE = 1, LEVITATING = 2, FAULT = 3, CURRENT_CONTROL = 4 };
-
 inline volatile CommandPacket* command_packet = nullptr;
+inline volatile StatusPacket* status_packet = nullptr;
 #ifdef USE_SPI_ERROR
 inline volatile uint32_t* spi_error_counter = nullptr;
 #endif
@@ -33,9 +32,9 @@ auto check_fault = []() {
 };
 
 static constexpr auto state_spi_connecting = make_state(
-    OperationalState::SPI_CONNECTING,
+    SlaveState::SPI_CONNECTING,
     Transition{
-        OperationalState::IDLE,
+        SlaveState::IDLE,
         []() {
 #ifdef USE_SPI_ERROR
             // Transition to IDLE if connection
@@ -46,30 +45,29 @@ static constexpr auto state_spi_connecting = make_state(
 #endif
         }
     },
-    Transition{OperationalState::FAULT, []() { return LCU_Slave::master_fault_triggered; }}
+    Transition{SlaveState::FAULT, []() { return LCU_Slave::master_fault_triggered; }}
 );
 
 static constexpr auto state_idle = make_state(
-    OperationalState::IDLE,
+    SlaveState::IDLE,
     Transition{
-        OperationalState::LEVITATING,
+        SlaveState::LEVITATING,
         []() {
             auto cmds = command_packet->flags;
             return  bool(cmds & CommandFlags::LEVITATE) ||
-                    bool(cmds & CommandFlags::CURRENT_CONTROL) ||
-                    bool(cmds & CommandFlags::CONTROL_LOOP);
+                    bool(cmds & CommandFlags::CURRENT_CONTROL);
         }
     },
     Transition{
-        OperationalState::FAULT,
+        SlaveState::FAULT,
         check_fault
     }
 );
 
 static constexpr auto state_levitating = make_state(
-    OperationalState::LEVITATING,
+    SlaveState::LEVITATING,
     Transition{
-        OperationalState::IDLE,
+        SlaveState::IDLE,
         []() {
             auto cmds = command_packet->flags;
             bool stop_requested =   !bool(cmds & CommandFlags::LEVITATE) &&
@@ -78,17 +76,17 @@ static constexpr auto state_levitating = make_state(
         }
     },
     Transition{
-        OperationalState::FAULT,
+        SlaveState::FAULT,
         check_fault
     }
 );
 
-static constexpr auto state_fault = make_state(OperationalState::FAULT);
+static constexpr auto state_fault = make_state(SlaveState::FAULT);
 
 
 static constinit auto sm_operational = []() consteval {
     auto sm = make_state_machine(
-        OperationalState::SPI_CONNECTING,
+        SlaveState::SPI_CONNECTING,
         state_spi_connecting,
         state_idle,
         state_levitating,
@@ -123,19 +121,13 @@ static constinit auto sm_operational = []() consteval {
             Control::deinit();
             LCU_Slave::g_lpu_array->disable_all();
             ErrorHandler("Entered Fault State");
-            while (1)
-                ;
+            // while (1)
+            //     ;
         },
         state_fault
     );
 
     // Levitation Control
-
-    sm.add_cyclic_action(
-        []() { __NOP(); },
-        500ms,
-        state_levitating
-    ); // Dummy action that makes things work, somehow
 
     sm.add_cyclic_action(
         []() {
@@ -144,6 +136,15 @@ static constinit auto sm_operational = []() consteval {
         },
         100us,
         state_levitating
+    );
+
+    sm.add_cyclic_action(
+        []() {
+            LCU_Slave::g_lpu_array->update_all();
+            LCU_Slave::g_airgap->update();
+        },
+        100us,
+        state_idle
     );
 
     sm.add_cyclic_action(
@@ -168,12 +169,6 @@ static constinit auto sm_operational = []() consteval {
         state_levitating
     );
 
-    sm.add_cyclic_action(
-        []() { __NOP(); },
-        500ms,
-        state_levitating
-    ); // Dummy action that makes things work, somehow
-
     return sm;
 }();
 
@@ -188,13 +183,13 @@ inline void update() {
 
     // General commands
     auto cmds = command_packet->flags;
-    if (bool(cmds & CommandFlags::RESET_SLAVE)) {
-        HAL_NVIC_SystemReset();
-    }
-    if (bool(cmds & CommandFlags::PWM)) {
-        // Should later change it to actually set the duty of the desired lpu
-        sm_operational.force_change_state(size_t(OperationalState::IDLE));
-        LCU_Slave::g_lpu->set_duty(command_packet->pwm.duty_cycle);
+    static bool was_enabled = false;
+    if (bool(cmds & CommandFlags::ENABLE_LPU_BUFFER)) { // (TODO) Distinguish the correct buffer, and disable somehow
+        LCU_Slave::g_lpu_array->enable_all();
+        was_enabled = true;
+    } else if (was_enabled && sm_operational.get_current_state() != SlaveState::LEVITATING) {
+        LCU_Slave::g_lpu_array->disable_all();
+        was_enabled = false;
     }
 }
 

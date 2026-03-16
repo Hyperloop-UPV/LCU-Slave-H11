@@ -35,7 +35,7 @@ uint32_t spi_timeout_counter = 0;
 
 inline void update_status() {
     auto& status = comms.status_packet;
-    status.control_state = static_cast<uint8_t>(LCU_SM::sm_operational.get_current_state());
+    status.slave_state = LCU_SM::sm_operational.get_current_state();
 }
 
 // ============================================
