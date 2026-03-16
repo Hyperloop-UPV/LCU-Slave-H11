@@ -28,10 +28,17 @@ inline constexpr auto led_fault_req = ST_LIB::DigitalOutputDomain::DigitalOutput
 
 bool master_fault_triggered = false;
 
+inline uint32_t reset_counter = 0;
 inline constexpr auto master_fault_req = ST_LIB::EXTIDomain::Device(
     Pinout::master_fault,
     ST_LIB::EXTIDomain::Trigger::FALLING_EDGE,
-    []() { master_fault_triggered = true; }
+    []() {
+        master_fault_triggered = true;
+        reset_counter++;
+        if (reset_counter >= 5) {
+            HAL_NVIC_SystemReset();
+        }
+    }
 );
 inline constexpr auto slave_fault_req =
     ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::slave_fault);
