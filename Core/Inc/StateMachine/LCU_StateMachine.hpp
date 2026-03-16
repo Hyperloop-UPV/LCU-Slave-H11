@@ -118,7 +118,7 @@ static constinit auto sm_operational = []() consteval {
     // Enter Fault: Safe State
     sm.add_enter_action(
         []() {
-            LCU_Slave::g_slave_fault->turn_on();
+            LCU_Slave::g_slave_fault->turn_off();
             LCU_Slave::g_led_fault->turn_on();
             Control::deinit();
             LCU_Slave::g_lpu_array->disable_all();

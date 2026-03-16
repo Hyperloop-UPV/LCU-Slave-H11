@@ -30,7 +30,7 @@ bool master_fault_triggered = false;
 
 inline constexpr auto master_fault_req = ST_LIB::EXTIDomain::Device(
     Pinout::master_fault,
-    ST_LIB::EXTIDomain::Trigger::RISING_EDGE,
+    ST_LIB::EXTIDomain::Trigger::FALLING_EDGE,
     []() { master_fault_triggered = true; }
 );
 inline constexpr auto slave_fault_req =
@@ -116,9 +116,6 @@ ST_LIB::DigitalOutputDomain::Instance* g_led_operational;
 ST_LIB::DigitalOutputDomain::Instance* g_led_fault;
 ST_LIB::DigitalOutputDomain::Instance* g_slave_fault;
 ST_LIB::EXTIDomain::Instance* g_master_fault;
-
-uint32_t count = 0;
-
 } // namespace LCU_Slave
 
 #endif // LCU_SLAVE_TYPES_HPP

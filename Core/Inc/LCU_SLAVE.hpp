@@ -22,6 +22,7 @@ inline void init() {
     g_led_fault = &Board::instance_of<led_fault_req>();
 
     g_slave_fault = &Board::instance_of<slave_fault_req>();
+    g_slave_fault->turn_on();
 
     static auto my_tim = get_timer_instance(Board, timer);
     my_tim.set_pwm_frequency(10'000); // 10khz
