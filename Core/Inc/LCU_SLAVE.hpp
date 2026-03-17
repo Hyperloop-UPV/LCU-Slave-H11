@@ -63,7 +63,6 @@ inline void init() {
     Communications::g_slave_ready = &Board::instance_of<slave_ready>();
     Communications::g_slave_ready->turn_off();
 
-    Scheduler::start();
     MDMA::start();
 
     Communications::init();
