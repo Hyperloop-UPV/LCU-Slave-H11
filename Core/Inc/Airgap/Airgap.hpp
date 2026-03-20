@@ -35,4 +35,33 @@ public:
     }
 };
 
+template <typename AirgapTuple> class AirgapArray;
+
+template <typename... AirgapInstances>
+class AirgapArray<std::tuple<AirgapInstances...>> {
+    static constexpr size_t AirgapCount = sizeof...(AirgapInstances);
+
+    using AirgapPtrTuple = std::tuple<std::remove_reference_t<AirgapInstances>*...>;
+
+    AirgapPtrTuple airgap_instances;
+
+public:
+    AirgapArray(std::tuple<AirgapInstances&...> _instances) {
+        airgap_instances =
+            std::apply([](auto&... instance) { return std::make_tuple(&instance...); }, _instances);
+    }
+
+    void update() {
+        std::apply([](auto*... instance) { (instance->update(), ...); }, airgap_instances);
+    }
+
+    void zeroing() {
+        std::apply([](auto*... instance) { (instance->zeroing(), ...); }, airgap_instances);
+    }
+
+    template <size_t Index> auto& get_airgap() {
+        return *std::get<Index>(airgap_instances);
+    }
+};
+
 #endif // AIRGAP_HPP

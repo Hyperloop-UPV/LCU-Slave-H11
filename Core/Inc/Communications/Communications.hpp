@@ -43,13 +43,6 @@ inline void update_status() {
 // ============================================
 
 inline void init() {
-    LCU_Slave::Frame::init(
-        comms,
-        *LCU_Slave::g_lpu,
-        *LCU_Slave::g_airgap,
-        comms,
-        *LCU_Slave::g_lpu
-    );
     LCU_SM::set_command_packet(&comms.command_packet);
 #ifdef USE_SPI_ERROR
     LCU_SM::set_spi_error_counter_ptr(&spi_error_counter);

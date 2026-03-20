@@ -83,7 +83,7 @@ static constexpr auto state_levitating = make_state(
 
 static constexpr auto state_fault = make_state(SlaveState::FAULT);
 
-
+    uint32_t task_id = 0;
 static constinit auto sm_operational = []() consteval {
     auto sm = make_state_machine(
         SlaveState::SPI_CONNECTING,
@@ -95,11 +95,20 @@ static constinit auto sm_operational = []() consteval {
 
     using namespace std::chrono_literals;
 
+
+
     sm.add_enter_action(
         []() {
             LCU_Slave::g_led_operational->turn_on();
             Control::init();
             LCU_Slave::g_lpu_array->enable_all();
+            task_id = Scheduler::register_task(
+                100,
+                []() {
+                    LCU_Slave::g_lpu_array->update_all();
+                    LCU_Slave::g_airgap_array->update();
+                }
+            );
         },
         state_levitating
     );
@@ -109,6 +118,7 @@ static constinit auto sm_operational = []() consteval {
             LCU_Slave::g_led_operational->turn_off();
             Control::deinit();
             LCU_Slave::g_lpu_array->disable_all();
+            Scheduler::unregister_task(task_id);
         },
         state_levitating
     );
@@ -116,7 +126,7 @@ static constinit auto sm_operational = []() consteval {
     // Enter Fault: Safe State
     sm.add_enter_action(
         []() {
-            LCU_Slave::g_slave_fault->turn_off();
+            LCU_Slave::g_slave_fault->turn_on();
             LCU_Slave::g_led_fault->turn_on();
             Control::deinit();
             LCU_Slave::g_lpu_array->disable_all();
@@ -131,26 +141,8 @@ static constinit auto sm_operational = []() consteval {
 
     sm.add_cyclic_action(
         []() {
-            LCU_Slave::g_lpu_array->update_all();
-            LCU_Slave::g_airgap->update();
-        },
-        100us,
-        state_levitating
-    );
-
-    sm.add_cyclic_action(
-        []() {
-            LCU_Slave::g_lpu_array->update_all();
-            LCU_Slave::g_airgap->update();
-        },
-        100us,
-        state_idle
-    );
-
-    sm.add_cyclic_action(
-        []() {
-            auto target_voltage = Control::current_update(LCU_Slave::g_lpu->shunt_v);
-            LCU_Slave::g_lpu->set_out_voltage(target_voltage);
+            auto target_voltage = Control::current_update();
+            LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage);
         },
         200us,
         state_levitating
@@ -160,7 +152,6 @@ static constinit auto sm_operational = []() consteval {
         []() {
             if (bool(command_packet->flags & CommandFlags::LEVITATE)) {
                 Control::levitation_update(
-                    LCU_Slave::g_airgap->airgap_v,
                     command_packet->levitate.desired_distance
                 );
             }
@@ -184,7 +175,7 @@ inline void update() {
     // General commands
     auto cmds = command_packet->flags;
     static bool was_enabled = false;
-    if (bool(cmds & CommandFlags::ENABLE_LPU_BUFFER)) { // (TODO) Distinguish the correct buffer, and disable somehow
+    if (bool(cmds & CommandFlags::ENABLE_LPU_BUFFER)) { // (TODO) Distinguish the correct buffer
         LCU_Slave::g_lpu_array->enable_all();
         was_enabled = true;
     } else if (was_enabled && sm_operational.get_current_state() != SlaveState::LEVITATING) {
