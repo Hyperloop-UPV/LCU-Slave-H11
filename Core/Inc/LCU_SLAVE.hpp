@@ -245,8 +245,7 @@ inline void init() {
                 my_lpu_1, my_lpu_2, my_lpu_3, my_lpu_4, my_lpu_5, my_lpu_6, my_lpu_7, my_lpu_8, my_lpu_9, my_lpu_10,
                 my_airgap_1, my_airgap_2, my_airgap_3, my_airgap_4, my_airgap_5, my_airgap_6, my_airgap_7, my_airgap_8,
                 Communications::comms,
-                my_lpu_1, my_lpu_2, my_lpu_3, my_lpu_4, my_lpu_5, my_lpu_6, my_lpu_7, my_lpu_8, my_lpu_9, my_lpu_10,
-                my_airgap_1, my_airgap_2, my_airgap_3, my_airgap_4, my_airgap_5, my_airgap_6, my_airgap_7, my_airgap_8);
+                my_lpu_1, my_lpu_2, my_lpu_3, my_lpu_4, my_lpu_5, my_lpu_6, my_lpu_7, my_lpu_8, my_lpu_9, my_lpu_10);
 #endif
 }
 

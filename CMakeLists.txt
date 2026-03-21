@@ -30,6 +30,7 @@ else()
 endif()
 
 option(USE_ETHERNET "Enable ethernet peripheral" OFF)
+option(USE_5_DOF "Build for 5-DOF configuration" ON)
 option(TARGET_NUCLEO "Targets the STM32H723 Nucleo development board" OFF)
 option(BUILD_EXAMPLES "Build Core/Src/Examples sources" OFF)
 option(USE_CCACHE "Use ccache if available" ON)
@@ -53,6 +54,7 @@ endif()
 
 message(STATUS "Template project: CMAKE_CROSSCOMPILING = ${CMAKE_CROSSCOMPILING}")
 message(STATUS "Template project: USE_ETHERNET         = ${USE_ETHERNET}")
+message(STATUS "Template project: USE_5_DOF            = ${USE_5_DOF}")
 message(STATUS "Template project: TARGET_NUCLEO        = ${TARGET_NUCLEO}")
 message(STATUS "Template project: BOARD_NAME           = ${BOARD_NAME}")
 
@@ -172,6 +174,8 @@ if(CMAKE_CROSSCOMPILING)
   target_compile_definitions(${EXECUTABLE} PRIVATE
     $<$<BOOL:${EXAMPLE_SELECTED}>:EXAMPLE_SELECTED>
     $<$<BOOL:${USE_ETHERNET}>:STLIB_ETH>
+    $<$<BOOL:${USE_5_DOF}>:USE_5_DOF>
+    $<$<NOT:$<BOOL:${USE_5_DOF}>>:USE_1_DOF>
     $<IF:$<BOOL:${TARGET_NUCLEO}>,NUCLEO,BOARD>
     $<IF:$<BOOL:${TARGET_NUCLEO}>,HSE_VALUE=8000000,HSE_VALUE=25000000>
   )

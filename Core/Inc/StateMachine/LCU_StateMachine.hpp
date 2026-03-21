@@ -142,7 +142,25 @@ static constinit auto sm_operational = []() consteval {
     sm.add_cyclic_action(
         []() {
             auto target_voltage = Control::current_update();
-            LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage);
+            uint16_t current_mask = command_packet->current_control.lpu_id_bitmask;
+            
+#ifdef USE_1_DOF
+            // 1-DOF: Single LPU
+            if (current_mask & (1 << 0)) { LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage); }
+            
+#elif defined(USE_5_DOF)
+            // 5-DOF: Apply to all 10 LPUs as specified in bitmask
+            if (current_mask & (1 << 0)) { LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage); }
+            if (current_mask & (1 << 1)) { LCU_Slave::g_lpu_array->get_lpu<1>().set_out_voltage(target_voltage); }
+            if (current_mask & (1 << 2)) { LCU_Slave::g_lpu_array->get_lpu<2>().set_out_voltage(target_voltage); }
+            if (current_mask & (1 << 3)) { LCU_Slave::g_lpu_array->get_lpu<3>().set_out_voltage(target_voltage); }
+            if (current_mask & (1 << 4)) { LCU_Slave::g_lpu_array->get_lpu<4>().set_out_voltage(target_voltage); }
+            if (current_mask & (1 << 5)) { LCU_Slave::g_lpu_array->get_lpu<5>().set_out_voltage(target_voltage); }
+            if (current_mask & (1 << 6)) { LCU_Slave::g_lpu_array->get_lpu<6>().set_out_voltage(target_voltage); }
+            if (current_mask & (1 << 7)) { LCU_Slave::g_lpu_array->get_lpu<7>().set_out_voltage(target_voltage); }
+            if (current_mask & (1 << 8)) { LCU_Slave::g_lpu_array->get_lpu<8>().set_out_voltage(target_voltage); }
+            if (current_mask & (1 << 9)) { LCU_Slave::g_lpu_array->get_lpu<9>().set_out_voltage(target_voltage); }
+#endif
         },
         200us,
         state_levitating
@@ -175,11 +193,36 @@ inline void update() {
     // General commands
     auto cmds = command_packet->flags;
     static bool was_enabled = false;
-    if (bool(cmds & CommandFlags::ENABLE_LPU_BUFFER)) { // (TODO) Distinguish the correct buffer
-        LCU_Slave::g_lpu_array->enable_all();
+    if (bool(cmds & CommandFlags::ENABLE_LPU_BUFFER)) {
+        uint16_t buffer_mask = command_packet->force_enable_lpu_buffer.lpu_buffer_id_bitmask;
+        
+#ifdef USE_1_DOF
+        // 1-DOF: Single LPU pair
+        if (buffer_mask & 0x03) { LCU_Slave::g_lpu_array->enable_pair<0>(); }
+        else { LCU_Slave::g_lpu_array->get_lpu<0>().disable(); }
+        
+#elif defined(USE_5_DOF)
+        // 5-DOF: Enable LPU pairs based on bitmask
+        // Each pair corresponds to bits in the mask (0-1 -> pair 0, 2-3 -> pair 1, etc.)
+        if (buffer_mask & 0x03) { LCU_Slave::g_lpu_array->enable_pair<0>(); }  // Pair 0 (LPU 0-1)
+        else { LCU_Slave::g_lpu_array->get_lpu<0>().disable(); }
+        if (buffer_mask & 0x0C) { LCU_Slave::g_lpu_array->enable_pair<1>(); }  // Pair 1 (LPU 2-3)
+        else { LCU_Slave::g_lpu_array->get_lpu<1>().disable(); }
+        if (buffer_mask & 0x30) { LCU_Slave::g_lpu_array->enable_pair<2>(); }  // Pair 2 (LPU 4-5)
+        else { LCU_Slave::g_lpu_array->get_lpu<2>().disable(); }
+        if (buffer_mask & 0xC0) { LCU_Slave::g_lpu_array->enable_pair<3>(); }  // Pair 3 (LPU 6-7)
+        else { LCU_Slave::g_lpu_array->get_lpu<3>().disable(); }
+        if (buffer_mask & 0x300) { LCU_Slave::g_lpu_array->enable_pair<4>(); }  // Pair 4 (LPU 8-9)
+        else { LCU_Slave::g_lpu_array->get_lpu<4>().disable(); }
+#endif
+        
         was_enabled = true;
-    } else if (was_enabled && sm_operational.get_current_state() != SlaveState::LEVITATING) {
-        LCU_Slave::g_lpu_array->disable_all();
+    } else if (was_enabled) {
+        if (sm_operational.get_current_state() == SlaveState::LEVITATING) {
+            LCU_Slave::g_lpu_array->disable_all();
+        } else {
+            LCU_Slave::g_lpu_array->disable_all();
+        }
         was_enabled = false;
     }
 }
