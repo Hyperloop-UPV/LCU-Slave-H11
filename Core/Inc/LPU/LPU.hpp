@@ -5,7 +5,7 @@
 #include "LPUShared.hpp"
 #include "HALAL/Services/PWM/PWM.hpp"
 #include "ST-LIB_LOW/Sensors/LinearSensor/LinearSensor.hpp"
-#include "HALAL/Services/ADC/NewADC.hpp"
+#include "HALAL/Services/ADC/ADC.hpp"
 
 template <typename PWMPositive, typename PWMNegative> class LPU : public LPUBase {
 public:
@@ -26,6 +26,8 @@ public:
               &shunt_v /*,
               shunt_moving_avg*/
           ) {
+        pwm_positive.turn_on();
+        pwm_negative.turn_on();
     }
 
     bool update() {
@@ -82,15 +84,14 @@ public:
         if (fault)
             return false;
         #endif
-        pwm_positive.turn_on();
-        pwm_negative.turn_on();
         is_enabled = true;
         return true;
     }
 
     bool disable() {
-        pwm_positive.turn_off();
-        pwm_negative.turn_off();
+        if (is_fixed_duty_cycle) {
+            return false;
+        }
         is_enabled = false;
         return true;
     }
@@ -163,17 +164,28 @@ public:
         std::apply([](auto*... lpu) { (lpu->zeroing(), ...); }, lpus);
     }
 
-    template <size_t LpuIndex> void enable_pair() {
+    template <size_t PairIndex> void enable_pair() {
         if constexpr (LpuCount == 1) {
             std::get<0>(enable_pins)->turn_off();
             std::get<0>(lpus)->enable();
             return;
         }
-        constexpr size_t PinIndex = LpuIndex / 2;
-        std::get<PinIndex>(enable_pins)->turn_on();
+        std::get<PairIndex>(enable_pins)->turn_off();
 
-        std::get<PinIndex * 2>(lpus)->enable();
-        std::get<PinIndex * 2 + 1>(lpus)->enable();
+        std::get<PairIndex * 2>(lpus)->enable();
+        std::get<PairIndex * 2 + 1>(lpus)->enable();
+    }
+
+    template <size_t PairIndex> void disable_pair() {
+        if constexpr (LpuCount == 1) {
+            std::get<0>(enable_pins)->turn_on();
+            std::get<0>(lpus)->disable();
+            return;
+        }
+        std::get<PairIndex>(enable_pins)->turn_on();
+
+        std::get<PairIndex * 2>(lpus)->disable();
+        std::get<PairIndex * 2 + 1>(lpus)->disable();
     }
 
     bool update_all() {

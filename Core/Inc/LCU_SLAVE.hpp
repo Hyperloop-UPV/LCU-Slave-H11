@@ -219,9 +219,9 @@ inline void init() {
     static auto my_airgap_3 = Airgap(Board::instance_of<adc_airgap_3>(), 0.0f, 1.0f);
     static auto my_airgap_4 = Airgap(Board::instance_of<adc_airgap_4>(), 0.0f, 1.0f);
     static auto my_airgap_5 = Airgap(Board::instance_of<adc_airgap_5>(), 0.0f, 1.0f);
-    static auto my_airgap_6 = Airgap(Board::instance_of<adc_airgap_1>(), 0.0f, 1.0f);
-    static auto my_airgap_7 = Airgap(Board::instance_of<adc_airgap_2>(), 0.0f, 1.0f);
-    static auto my_airgap_8 = Airgap(Board::instance_of<adc_airgap_3>(), 0.0f, 1.0f);
+    static auto my_airgap_6 = Airgap(Board::instance_of<adc_airgap_6>(), 0.0f, 1.0f);
+    static auto my_airgap_7 = Airgap(Board::instance_of<adc_airgap_7>(), 0.0f, 1.0f);
+    static auto my_airgap_8 = Airgap(Board::instance_of<adc_airgap_8>(), 0.0f, 1.0f);
 
     // Create Airgap Array
     static auto my_airgap_array = AirgapArrayType(

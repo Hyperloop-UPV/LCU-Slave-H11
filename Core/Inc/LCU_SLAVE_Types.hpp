@@ -203,6 +203,9 @@ float airgap_2_buffer = 0.0f;
 float airgap_3_buffer = 0.0f;
 float airgap_4_buffer = 0.0f;
 float airgap_5_buffer = 0.0f;
+float airgap_6_buffer = 0.0f;
+float airgap_7_buffer = 0.0f;
+float airgap_8_buffer = 0.0f;
 
 inline constexpr auto adc_vbat_1 = ST_LIB::ADCDomain::ADC(Pinout::vbat_1, vbat_1_buffer);
 inline constexpr auto adc_vbat_2 = ST_LIB::ADCDomain::ADC(Pinout::vbat_2, vbat_2_buffer);
@@ -219,12 +222,15 @@ inline constexpr auto adc_airgap_2 = ST_LIB::ADCDomain::ADC(Pinout::airgap_2, ai
 inline constexpr auto adc_airgap_3 = ST_LIB::ADCDomain::ADC(Pinout::airgap_3, airgap_3_buffer);
 inline constexpr auto adc_airgap_4 = ST_LIB::ADCDomain::ADC(Pinout::airgap_4, airgap_4_buffer);
 inline constexpr auto adc_airgap_5 = ST_LIB::ADCDomain::ADC(Pinout::airgap_5, airgap_5_buffer);
+inline constexpr auto adc_airgap_6 = ST_LIB::ADCDomain::ADC(Pinout::airgap_6, airgap_6_buffer);
+inline constexpr auto adc_airgap_7 = ST_LIB::ADCDomain::ADC(Pinout::airgap_7, airgap_7_buffer);
+inline constexpr auto adc_airgap_8 = ST_LIB::ADCDomain::ADC(Pinout::airgap_8, airgap_8_buffer);
 
 #endif
 
 // SPI Configuration
 inline constexpr auto spi_req =
-    ST_LIB::SPIDomain::Device<DMA_Domain::Stream::dma1_stream5, DMA_Domain::Stream::dma1_stream6>(
+    ST_LIB::SPIDomain::Device<ST_LIB::DMADomain::Stream::dma1_stream5, ST_LIB::DMADomain::Stream::dma1_stream6>(
         ST_LIB::SPIDomain::SPIMode::SLAVE,
         Pinout::spi_peripheral,
         2000000,
@@ -256,7 +262,7 @@ using Board = ST_LIB::Board<
     en_buff_1, en_buff_2, en_buff_3, en_buff_4, en_buff_5,
     adc_vbat_1, adc_vbat_2, adc_vbat_3, adc_vbat_4, adc_vbat_5,
     adc_shunt_1, adc_shunt_2, adc_shunt_3, adc_shunt_4, adc_shunt_5,
-    adc_airgap_1, adc_airgap_2, adc_airgap_3, adc_airgap_4, adc_airgap_5
+    adc_airgap_1, adc_airgap_2, adc_airgap_3, adc_airgap_4, adc_airgap_5, adc_airgap_6, adc_airgap_7, adc_airgap_8
 #endif
     >;
 

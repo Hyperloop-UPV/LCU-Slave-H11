@@ -4,7 +4,7 @@
 #include "C++Utilities/CppImports.hpp"
 #include "AirgapShared.hpp"
 #include "ST-LIB_LOW/Sensors/LinearSensor/LinearSensor.hpp"
-#include "HALAL/Services/ADC/NewADC.hpp"
+#include "HALAL/Services/ADC/ADC.hpp"
 
 class Airgap : public AirgapBase {
     // MovingAverage<10> airgap_moving_avg;

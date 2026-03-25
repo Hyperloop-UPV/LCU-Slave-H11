@@ -83,7 +83,6 @@ static constexpr auto state_levitating = make_state(
 
 static constexpr auto state_fault = make_state(SlaveState::FAULT);
 
-    uint32_t task_id = 0;
 static constinit auto sm_operational = []() consteval {
     auto sm = make_state_machine(
         SlaveState::SPI_CONNECTING,
@@ -102,13 +101,6 @@ static constinit auto sm_operational = []() consteval {
             LCU_Slave::g_led_operational->turn_on();
             Control::init();
             LCU_Slave::g_lpu_array->enable_all();
-            task_id = Scheduler::register_task(
-                100,
-                []() {
-                    LCU_Slave::g_lpu_array->update_all();
-                    LCU_Slave::g_airgap_array->update();
-                }
-            );
         },
         state_levitating
     );
@@ -118,7 +110,6 @@ static constinit auto sm_operational = []() consteval {
             LCU_Slave::g_led_operational->turn_off();
             Control::deinit();
             LCU_Slave::g_lpu_array->disable_all();
-            Scheduler::unregister_task(task_id);
         },
         state_levitating
     );
@@ -135,6 +126,24 @@ static constinit auto sm_operational = []() consteval {
             //     ;
         },
         state_fault
+    );
+
+    sm.add_cyclic_action(
+        []() {
+            LCU_Slave::g_lpu_array->update_all();
+            LCU_Slave::g_airgap_array->update();
+        },
+        100us,
+        state_levitating
+    );
+
+    sm.add_cyclic_action(
+        []() {
+            LCU_Slave::g_lpu_array->update_all();
+            LCU_Slave::g_airgap_array->update();
+        },
+        1ms,
+        state_idle
     );
 
     // Levitation Control
@@ -199,21 +208,21 @@ inline void update() {
 #ifdef USE_1_DOF
         // 1-DOF: Single LPU pair
         if (buffer_mask & 0x03) { LCU_Slave::g_lpu_array->enable_pair<0>(); }
-        else { LCU_Slave::g_lpu_array->get_lpu<0>().disable(); }
+        else { LCU_Slave::g_lpu_array->disable_pair<0>(); }
         
 #elif defined(USE_5_DOF)
         // 5-DOF: Enable LPU pairs based on bitmask
-        // Each pair corresponds to bits in the mask (0-1 -> pair 0, 2-3 -> pair 1, etc.)
-        if (buffer_mask & 0x03) { LCU_Slave::g_lpu_array->enable_pair<0>(); }  // Pair 0 (LPU 0-1)
-        else { LCU_Slave::g_lpu_array->get_lpu<0>().disable(); }
-        if (buffer_mask & 0x0C) { LCU_Slave::g_lpu_array->enable_pair<1>(); }  // Pair 1 (LPU 2-3)
-        else { LCU_Slave::g_lpu_array->get_lpu<1>().disable(); }
-        if (buffer_mask & 0x30) { LCU_Slave::g_lpu_array->enable_pair<2>(); }  // Pair 2 (LPU 4-5)
-        else { LCU_Slave::g_lpu_array->get_lpu<2>().disable(); }
-        if (buffer_mask & 0xC0) { LCU_Slave::g_lpu_array->enable_pair<3>(); }  // Pair 3 (LPU 6-7)
-        else { LCU_Slave::g_lpu_array->get_lpu<3>().disable(); }
-        if (buffer_mask & 0x300) { LCU_Slave::g_lpu_array->enable_pair<4>(); }  // Pair 4 (LPU 8-9)
-        else { LCU_Slave::g_lpu_array->get_lpu<4>().disable(); }
+        // Each pair corresponds to 1 bit in the mask
+        if (buffer_mask & 0x01) { LCU_Slave::g_lpu_array->enable_pair<0>(); }  // Pair 0 (LPU 0-1)
+        else { LCU_Slave::g_lpu_array->disable_pair<0>(); }
+         if (buffer_mask & 0x02) { LCU_Slave::g_lpu_array->enable_pair<1>(); }  // Pair 1 (LPU 2-3)
+        else { LCU_Slave::g_lpu_array->disable_pair<1>(); }
+        if (buffer_mask & 0x04) { LCU_Slave::g_lpu_array->enable_pair<2>(); }  // Pair 2 (LPU 4-5)
+        else { LCU_Slave::g_lpu_array->disable_pair<2>(); }
+        if (buffer_mask & 0x08) { LCU_Slave::g_lpu_array->enable_pair<3>(); }  // Pair 3 (LPU 6-7)
+        else { LCU_Slave::g_lpu_array->disable_pair<3>(); }
+        if (buffer_mask & 0x10) { LCU_Slave::g_lpu_array->enable_pair<4>(); }  // Pair 4 (LPU 8-9)
+        else { LCU_Slave::g_lpu_array->disable_pair<4>(); }
 #endif
         
         was_enabled = true;
