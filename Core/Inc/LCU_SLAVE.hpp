@@ -257,6 +257,10 @@ inline void update() {
     LCU_SM::update();
     Scheduler::update();
     MDMA::update();
+    if (reset_counter >= 5) {
+        HAL_Delay(100); // Delay in case more faults are coming in rapidly
+        HAL_NVIC_SystemReset();
+    }
 }
 
 } // namespace LCU_Slave

@@ -15,7 +15,7 @@ auto& led_fault = ST_LIB::PE8;        // Change it to the actual pin
 auto& led_operational = ST_LIB::PF15; // Change it to the actual pin
 
 /* Fault Lines (EXTI) */
-auto& master_fault = ST_LIB::PE0;
+auto& master_fault = ST_LIB::PG12;
 auto& slave_fault = ST_LIB::PD2;
 
 // ============================================
