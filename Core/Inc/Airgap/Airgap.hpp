@@ -4,21 +4,19 @@
 #include "C++Utilities/CppImports.hpp"
 #include "AirgapShared.hpp"
 #include "ST-LIB_LOW/Sensors/LinearSensor/LinearSensor.hpp"
+#include "ST-LIB_LOW/Sensors/LinearSensor/FilteredLinearSensor.hpp"
 #include "HALAL/Services/ADC/ADC.hpp"
+#include "Control/Blocks/MovingAverage.hpp"
 
+template <uint32_t MovingAverageSize>
 class Airgap : public AirgapBase {
-    // MovingAverage<10> airgap_moving_avg;
-    LinearSensor<volatile float> airgap_sensor;
+    MovingAverage<MovingAverageSize> airgap_moving_avg;
+    FilteredLinearSensor<volatile float, MovingAverageSize> airgap_sensor;
 
 public:
     Airgap(ST_LIB::ADCDomain::Instance& airgap_instance, float airgap_offset, float airgap_slope)
-        : airgap_sensor(
-              airgap_instance,
-              airgap_slope,
-              airgap_offset,
-              &airgap_v /*,
-              airgap_moving_avg*/
-          ) {}
+        : airgap_moving_avg(),
+          airgap_sensor(airgap_instance, airgap_slope, airgap_offset, &airgap_v, airgap_moving_avg) {}
 
     void update() { airgap_sensor.read(); }
 

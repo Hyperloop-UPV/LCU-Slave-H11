@@ -214,14 +214,14 @@ inline void init() {
     g_lpu_array = &my_lpu_array;
 
     // Create Airgaps
-    static auto my_airgap_1 = Airgap(Board::instance_of<adc_airgap_1>(), 0.0f, 1.0f);
-    static auto my_airgap_2 = Airgap(Board::instance_of<adc_airgap_2>(), 0.0f, 1.0f);
-    static auto my_airgap_3 = Airgap(Board::instance_of<adc_airgap_3>(), 0.0f, 1.0f);
-    static auto my_airgap_4 = Airgap(Board::instance_of<adc_airgap_4>(), 0.0f, 1.0f);
-    static auto my_airgap_5 = Airgap(Board::instance_of<adc_airgap_5>(), 0.0f, 1.0f);
-    static auto my_airgap_6 = Airgap(Board::instance_of<adc_airgap_6>(), 0.0f, 1.0f);
-    static auto my_airgap_7 = Airgap(Board::instance_of<adc_airgap_7>(), 0.0f, 1.0f);
-    static auto my_airgap_8 = Airgap(Board::instance_of<adc_airgap_8>(), 0.0f, 1.0f);
+    static auto my_airgap_1 = std::tuple_element_t<0, AirgapTypes>(Board::instance_of<adc_airgap_1>(), 0.0f, 1.0f);
+    static auto my_airgap_2 = std::tuple_element_t<1, AirgapTypes>(Board::instance_of<adc_airgap_2>(), 0.0f, 1.0f);
+    static auto my_airgap_3 = std::tuple_element_t<2, AirgapTypes>(Board::instance_of<adc_airgap_3>(), 0.0f, 1.0f);
+    static auto my_airgap_4 = std::tuple_element_t<3, AirgapTypes>(Board::instance_of<adc_airgap_4>(), 0.0f, 1.0f);
+    static auto my_airgap_5 = std::tuple_element_t<4, AirgapTypes>(Board::instance_of<adc_airgap_5>(), 0.0f, 1.0f);
+    static auto my_airgap_6 = std::tuple_element_t<5, AirgapTypes>(Board::instance_of<adc_airgap_6>(), 0.0f, 1.0f);
+    static auto my_airgap_7 = std::tuple_element_t<6, AirgapTypes>(Board::instance_of<adc_airgap_7>(), 0.0f, 1.0f);
+    static auto my_airgap_8 = std::tuple_element_t<7, AirgapTypes>(Board::instance_of<adc_airgap_8>(), 0.0f, 1.0f);
 
     // Create Airgap Array
     static auto my_airgap_array = AirgapArrayType(

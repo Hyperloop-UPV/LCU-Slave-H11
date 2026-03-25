@@ -323,21 +323,32 @@ using PWMNegativeTypes = std::tuple<
 >; 
 
 using LPUTypes = std::tuple<
-    LPU<decltype(std::declval<TimerWrapper15Type>().template get_pwm<pwm_positive_1>()), decltype(std::declval<TimerWrapper15Type>().template get_pwm<pwm_negative_1>())>,
-    LPU<decltype(std::declval<TimerWrapper3Type>().template get_pwm<pwm_positive_2>()), decltype(std::declval<TimerWrapper3Type>().template get_pwm<pwm_negative_2>())>,
-    LPU<decltype(std::declval<TimerWrapper3Type>().template get_pwm<pwm_positive_3>()), decltype(std::declval<TimerWrapper3Type>().template get_pwm<pwm_negative_3>())>,
-    LPU<decltype(std::declval<TimerWrapper8Type>().template get_pwm<pwm_positive_4>()), decltype(std::declval<TimerWrapper8Type>().template get_pwm<pwm_negative_4>())>,
-    LPU<decltype(std::declval<TimerWrapper4Type>().template get_pwm<pwm_positive_5>()), decltype(std::declval<TimerWrapper4Type>().template get_pwm<pwm_negative_5>())>,
-    LPU<decltype(std::declval<TimerWrapper4Type>().template get_pwm<pwm_positive_6>()), decltype(std::declval<TimerWrapper4Type>().template get_pwm<pwm_negative_6>())>,
-    LPU<decltype(std::declval<TimerWrapper17Type>().template get_pwm<pwm_positive_7>()), decltype(std::declval<TimerWrapper16Type>().template get_pwm<pwm_negative_7>())>,
-    LPU<decltype(std::declval<TimerWrapper12Type>().template get_pwm<pwm_positive_8>()), decltype(std::declval<TimerWrapper12Type>().template get_pwm<pwm_negative_8>())>,
-    LPU<decltype(std::declval<TimerWrapper1Type>().template get_pwm<pwm_positive_9>()), decltype(std::declval<TimerWrapper1Type>().template get_pwm<pwm_negative_9>())>,
-    LPU<decltype(std::declval<TimerWrapper1Type>().template get_pwm<pwm_positive_10>()), decltype(std::declval<TimerWrapper1Type>().template get_pwm<pwm_negative_10>())>
+    LPU<decltype(std::declval<TimerWrapper15Type>().template get_pwm<pwm_positive_1>()), decltype(std::declval<TimerWrapper15Type>().template get_pwm<pwm_negative_1>()), 10, 10>,
+    LPU<decltype(std::declval<TimerWrapper3Type>().template get_pwm<pwm_positive_2>()), decltype(std::declval<TimerWrapper3Type>().template get_pwm<pwm_negative_2>()), 10, 10>,
+    LPU<decltype(std::declval<TimerWrapper3Type>().template get_pwm<pwm_positive_3>()), decltype(std::declval<TimerWrapper3Type>().template get_pwm<pwm_negative_3>()), 10, 10>,
+    LPU<decltype(std::declval<TimerWrapper8Type>().template get_pwm<pwm_positive_4>()), decltype(std::declval<TimerWrapper8Type>().template get_pwm<pwm_negative_4>()), 10, 10>,
+    LPU<decltype(std::declval<TimerWrapper4Type>().template get_pwm<pwm_positive_5>()), decltype(std::declval<TimerWrapper4Type>().template get_pwm<pwm_negative_5>()), 10, 10>,
+    LPU<decltype(std::declval<TimerWrapper4Type>().template get_pwm<pwm_positive_6>()), decltype(std::declval<TimerWrapper4Type>().template get_pwm<pwm_negative_6>()), 10, 10>,
+    LPU<decltype(std::declval<TimerWrapper17Type>().template get_pwm<pwm_positive_7>()), decltype(std::declval<TimerWrapper16Type>().template get_pwm<pwm_negative_7>()), 10, 10>,
+    LPU<decltype(std::declval<TimerWrapper12Type>().template get_pwm<pwm_positive_8>()), decltype(std::declval<TimerWrapper12Type>().template get_pwm<pwm_negative_8>()), 10, 10>,
+    LPU<decltype(std::declval<TimerWrapper1Type>().template get_pwm<pwm_positive_9>()), decltype(std::declval<TimerWrapper1Type>().template get_pwm<pwm_negative_9>()), 10, 10>,
+    LPU<decltype(std::declval<TimerWrapper1Type>().template get_pwm<pwm_positive_10>()), decltype(std::declval<TimerWrapper1Type>().template get_pwm<pwm_negative_10>()), 10, 10>
+>;
+
+using AirgapTypes = std::tuple<
+    Airgap<10>,
+    Airgap<10>,
+    Airgap<10>,
+    Airgap<10>,
+    Airgap<10>,
+    Airgap<10>,
+    Airgap<10>,
+    Airgap<10>
 >;
 
 using LpuArrayType = LpuArray<LPUTypes, std::tuple<EnablePinType, EnablePinType, EnablePinType, EnablePinType, EnablePinType>>;
 
-using AirgapArrayType = AirgapArray<std::tuple<Airgap, Airgap, Airgap, Airgap, Airgap, Airgap, Airgap, Airgap>>;
+using AirgapArrayType = AirgapArray<AirgapTypes>;
 
 #endif
 

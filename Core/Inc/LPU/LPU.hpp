@@ -4,10 +4,11 @@
 #include "C++Utilities/CppImports.hpp"
 #include "LPUShared.hpp"
 #include "HALAL/Services/PWM/PWM.hpp"
-#include "ST-LIB_LOW/Sensors/LinearSensor/LinearSensor.hpp"
+#include "ST-LIB_LOW/Sensors/LinearSensor/FilteredLinearSensor.hpp"
 #include "HALAL/Services/ADC/ADC.hpp"
+#include "Control/Blocks/MovingAverage.hpp"
 
-template <typename PWMPositive, typename PWMNegative> class LPU : public LPUBase {
+template <typename PWMPositive, typename PWMNegative, uint32_t ShuntMovingAverageSize, uint32_t VbatMovingAverageSize> class LPU : public LPUBase {
 public:
     LPU(PWMPositive& pwm_positive,
         PWMNegative& pwm_negative,
@@ -18,14 +19,9 @@ public:
         float shunt_offset,
         float shunt_slope)
         : pwm_positive(pwm_positive), pwm_negative(pwm_negative),
-          vbat_sensor(adc_vbat_instance, vbat_slope, vbat_offset, &vbat_v /*, vbat_moving_avg*/),
-          shunt_sensor(
-              adc_shunt_instance,
-              shunt_slope,
-              shunt_offset,
-              &shunt_v /*,
-              shunt_moving_avg*/
-          ) {
+          shunt_moving_avg(), vbat_moving_avg(),
+          vbat_sensor(adc_vbat_instance, vbat_slope, vbat_offset, &vbat_v, vbat_moving_avg),
+          shunt_sensor(adc_shunt_instance, shunt_slope, shunt_offset, &shunt_v, shunt_moving_avg) {
         pwm_positive.turn_on();
         pwm_negative.turn_on();
     }
@@ -116,10 +112,10 @@ private:
     PWMPositive& pwm_positive;
     PWMNegative& pwm_negative;
 
-    // MovingAverage<10> shunt_moving_avg;
-    // MovingAverage<10> vbat_moving_avg;
-    LinearSensor<volatile float> vbat_sensor;
-    LinearSensor<volatile float> shunt_sensor;
+    MovingAverage<ShuntMovingAverageSize> shunt_moving_avg;
+    MovingAverage<VbatMovingAverageSize> vbat_moving_avg;
+    FilteredLinearSensor<volatile float, VbatMovingAverageSize> vbat_sensor;
+    FilteredLinearSensor<volatile float, ShuntMovingAverageSize> shunt_sensor;
 };
 
 template <typename LPUTuple, typename EnablePinTuple> class LpuArray;
