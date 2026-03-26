@@ -2,6 +2,7 @@
 #define LCU_STATE_MACHINE_HPP
 
 #include "ST-LIB_LOW/StateMachine/StateMachine.hpp"
+#include "ST-LIB_HIGH/Protections/ProtectionManager.hpp"
 #include "LCU_SLAVE_Types.hpp"
 #include "Control/Control.hpp"
 #include "CommunicationsShared.hpp"
@@ -194,7 +195,13 @@ static constinit auto sm_operational = []() consteval {
 // Public Interface
 // ============================================
 
-inline void start() { sm_operational.start(); }
+inline void start() {
+    // ProtectionManager::add_standard_protections();
+    // ProtectionManager::link_state_machine(sm_operational, static_cast<ProtectionManager::state_id>(SlaveState::FAULT));
+    // ProtectionManager::initialize();
+    
+    sm_operational.start();
+}
 
 inline void update() {
     sm_operational.check_transitions();

@@ -13,10 +13,29 @@ namespace LCU_Slave {
 // ============================================
 
 // ============================================
+// Debug Console Setup
+// ============================================
+#ifdef DEBUG_CONSOLE
+inline void setup_debug_console() {
+#ifdef HAL_UART_MODULE_ENABLED
+    if (!UART::set_up_printf(UART::uart3)) {
+        ErrorHandler("Unable to set up UART printf for debug console");
+    }
+    UART::start();
+#endif
+}
+#endif
+
+// ============================================
 // Initialization
 // ============================================
 inline void init() {
     Board::init();
+
+    // Set up debug console for error/warning output
+    #ifdef DEBUG_CONSOLE
+    setup_debug_console();
+    #endif
 
     g_led_operational = &Board::instance_of<led_operational_req>();
     g_led_fault = &Board::instance_of<led_fault_req>();
