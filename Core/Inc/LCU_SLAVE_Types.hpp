@@ -269,9 +269,9 @@ using EnablePinType = ST_LIB::DigitalOutputDomain::Instance;
 using TimerWrapperType = ST_LIB::TimerWrapper<timer>;
 using PWMPositiveType = decltype(std::declval<TimerWrapperType>().template get_pwm<pwm_positive>());
 using PWMNegativeType = decltype(std::declval<TimerWrapperType>().template get_pwm<pwm_negative>());
-using LPUType = LPU<PWMPositiveType, PWMNegativeType>;
+using LPUType = LPU<PWMPositiveType, PWMNegativeType, 1, 1>;
 using LpuArrayType = LpuArray<std::tuple<LPUType>, std::tuple<EnablePinType>>;
-using AirgapArrayType = AirgapArray<std::tuple<Airgap>>;
+using AirgapArrayType = AirgapArray<std::tuple<Airgap<8>>>;
 #elif defined(USE_5_DOF)
 using TimerWrapper15Type = ST_LIB::TimerWrapper<timer15>;
 using TimerWrapper3Type = ST_LIB::TimerWrapper<timer3>;

@@ -11,9 +11,14 @@ extern "C" {
 namespace Control {
 void init() { control_initialize(); }
 
-float current_update() {
+float current_update(float desired_current = 0.0f, bool use_direct_current_reference = false) {
 #ifdef USE_1_DOF
     control_U.corriente_real = LCU_Slave::g_lpu_array->get_lpu<0>().shunt_v;
+
+    if (use_direct_current_reference) {
+        // CURRENT_CONTROL mode: bypass outer loop and inject current setpoint directly.
+        control_DW.RateTransition_Buffer0 = desired_current;
+    }
 
     control_step0();
 

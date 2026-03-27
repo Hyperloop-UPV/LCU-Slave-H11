@@ -150,34 +150,44 @@ static constinit auto sm_operational = []() consteval {
 
     sm.add_cyclic_action(
         []() {
-            auto target_voltage = Control::current_update();
+            bool levitate_active = bool(command_packet->flags & CommandFlags::LEVITATE);
+            bool direct_current_control = bool(command_packet->flags & CommandFlags::CURRENT_CONTROL);
+            auto target_voltage = Control::current_update(
+                command_packet->current_control.desired_current,
+                direct_current_control
+            );
             uint16_t current_mask = command_packet->current_control.lpu_id_bitmask;
+            bool apply_to_all_for_levitation = levitate_active;
             
 #ifdef USE_1_DOF
             // 1-DOF: Single LPU
-            if (current_mask & (1 << 0)) { LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage); }
+            if (apply_to_all_for_levitation || (current_mask & (1 << 0))) {
+                LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage);
+            }
             
 #elif defined(USE_5_DOF)
             // 5-DOF: Apply to all 10 LPUs as specified in bitmask
-            if (current_mask & (1 << 0)) { LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage); }
-            if (current_mask & (1 << 1)) { LCU_Slave::g_lpu_array->get_lpu<1>().set_out_voltage(target_voltage); }
-            if (current_mask & (1 << 2)) { LCU_Slave::g_lpu_array->get_lpu<2>().set_out_voltage(target_voltage); }
-            if (current_mask & (1 << 3)) { LCU_Slave::g_lpu_array->get_lpu<3>().set_out_voltage(target_voltage); }
-            if (current_mask & (1 << 4)) { LCU_Slave::g_lpu_array->get_lpu<4>().set_out_voltage(target_voltage); }
-            if (current_mask & (1 << 5)) { LCU_Slave::g_lpu_array->get_lpu<5>().set_out_voltage(target_voltage); }
-            if (current_mask & (1 << 6)) { LCU_Slave::g_lpu_array->get_lpu<6>().set_out_voltage(target_voltage); }
-            if (current_mask & (1 << 7)) { LCU_Slave::g_lpu_array->get_lpu<7>().set_out_voltage(target_voltage); }
-            if (current_mask & (1 << 8)) { LCU_Slave::g_lpu_array->get_lpu<8>().set_out_voltage(target_voltage); }
-            if (current_mask & (1 << 9)) { LCU_Slave::g_lpu_array->get_lpu<9>().set_out_voltage(target_voltage); }
+            if (apply_to_all_for_levitation || (current_mask & (1 << 0))) { LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage); }
+            if (apply_to_all_for_levitation || (current_mask & (1 << 1))) { LCU_Slave::g_lpu_array->get_lpu<1>().set_out_voltage(target_voltage); }
+            if (apply_to_all_for_levitation || (current_mask & (1 << 2))) { LCU_Slave::g_lpu_array->get_lpu<2>().set_out_voltage(target_voltage); }
+            if (apply_to_all_for_levitation || (current_mask & (1 << 3))) { LCU_Slave::g_lpu_array->get_lpu<3>().set_out_voltage(target_voltage); }
+            if (apply_to_all_for_levitation || (current_mask & (1 << 4))) { LCU_Slave::g_lpu_array->get_lpu<4>().set_out_voltage(target_voltage); }
+            if (apply_to_all_for_levitation || (current_mask & (1 << 5))) { LCU_Slave::g_lpu_array->get_lpu<5>().set_out_voltage(target_voltage); }
+            if (apply_to_all_for_levitation || (current_mask & (1 << 6))) { LCU_Slave::g_lpu_array->get_lpu<6>().set_out_voltage(target_voltage); }
+            if (apply_to_all_for_levitation || (current_mask & (1 << 7))) { LCU_Slave::g_lpu_array->get_lpu<7>().set_out_voltage(target_voltage); }
+            if (apply_to_all_for_levitation || (current_mask & (1 << 8))) { LCU_Slave::g_lpu_array->get_lpu<8>().set_out_voltage(target_voltage); }
+            if (apply_to_all_for_levitation || (current_mask & (1 << 9))) { LCU_Slave::g_lpu_array->get_lpu<9>().set_out_voltage(target_voltage); }
 #endif
         },
-        200us,
+        500us,
         state_levitating
     );
 
     sm.add_cyclic_action(
         []() {
-            if (bool(command_packet->flags & CommandFlags::LEVITATE)) {
+            bool levitate_active = bool(command_packet->flags & CommandFlags::LEVITATE);
+            bool direct_current_control = bool(command_packet->flags & CommandFlags::CURRENT_CONTROL);
+            if (levitate_active && !direct_current_control) {
                 Control::levitation_update(
                     command_packet->levitate.desired_distance
                 );

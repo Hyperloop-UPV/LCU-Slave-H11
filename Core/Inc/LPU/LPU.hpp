@@ -45,6 +45,11 @@ public:
      * @brief Set the duty cycle based on the desired output voltage and the current battery voltage
      */
     bool set_out_voltage(float voltage) {
+        if (voltage > 80.0f) {
+            voltage = 80.0f;
+        } else if (voltage < -80.0f) {
+            voltage = -80.0f;
+        }
         if (is_fixed_duty_cycle) {
             return true;
         }
@@ -89,6 +94,7 @@ public:
             return false;
         }
         is_enabled = false;
+        set_duty(0.0f);
         return true;
     }
 
@@ -160,26 +166,28 @@ public:
         std::apply([](auto*... lpu) { (lpu->zeroing(), ...); }, lpus);
     }
 
-    template <size_t PairIndex> void enable_pair() {
-        if constexpr (LpuCount == 1) {
-            std::get<0>(enable_pins)->turn_off();
-            std::get<0>(lpus)->enable();
-            return;
-        }
-        std::get<PairIndex>(enable_pins)->turn_off();
+    template <size_t PairIndex> requires (LpuCount == 1)
+    void enable_pair() {
+        std::get<0>(enable_pins)->turn_off();
+        std::get<0>(lpus)->enable();
+    }
 
+    template <size_t PairIndex> requires (LpuCount > 1)
+    void enable_pair() {
+        std::get<PairIndex>(enable_pins)->turn_off();
         std::get<PairIndex * 2>(lpus)->enable();
         std::get<PairIndex * 2 + 1>(lpus)->enable();
     }
 
-    template <size_t PairIndex> void disable_pair() {
-        if constexpr (LpuCount == 1) {
-            std::get<0>(enable_pins)->turn_on();
-            std::get<0>(lpus)->disable();
-            return;
-        }
-        std::get<PairIndex>(enable_pins)->turn_on();
+    template <size_t PairIndex> requires (LpuCount == 1)
+    void disable_pair() {
+        std::get<0>(enable_pins)->turn_on();
+        std::get<0>(lpus)->disable();
+    }
 
+    template <size_t PairIndex> requires (LpuCount > 1)
+    void disable_pair() {
+        std::get<PairIndex>(enable_pins)->turn_on();
         std::get<PairIndex * 2>(lpus)->disable();
         std::get<PairIndex * 2 + 1>(lpus)->disable();
     }
