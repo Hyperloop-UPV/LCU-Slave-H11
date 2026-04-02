@@ -30,7 +30,7 @@ else()
 endif()
 
 option(USE_ETHERNET "Enable ethernet peripheral" OFF)
-option(USE_5_DOF "Build for 5-DOF configuration" ON)
+option(USE_5_DOF "Build for 5-DOF configuration" OFF)
 option(TARGET_NUCLEO "Targets the STM32H723 Nucleo development board" OFF)
 option(BUILD_EXAMPLES "Build Core/Src/Examples sources" OFF)
 option(USE_CCACHE "Use ccache if available" ON)
