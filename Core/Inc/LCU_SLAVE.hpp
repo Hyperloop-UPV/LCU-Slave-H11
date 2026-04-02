@@ -61,7 +61,7 @@ inline void init() {
 
 
     // Create Airgap
-    static auto my_airgap = Airgap<8>(Board::instance_of<adc_airgap>(), 0.00020f, 0.06987);
+    static auto my_airgap = Airgap<8>(Board::instance_of<adc_airgap>(), 0.00020f, 0.006987);
 
     // Create Airgap Array
     static auto my_airgap_array = AirgapArrayType(my_airgap);
