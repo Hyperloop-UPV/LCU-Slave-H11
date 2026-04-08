@@ -235,16 +235,15 @@ inline void init() {
 
     Communications::init();
 
-    LCU_SM::set_command_packet(&Communications::comms.command_packet);
     LCU_SM::start();
 
 #ifdef USE_1_DOF
-    Frame::init(Communications::comms, my_lpu, my_airgap, Communications::comms, my_lpu);
+    Frame::init(Communications::state_machine, my_lpu, my_airgap, Communications::control, my_lpu);
 #elif defined(USE_5_DOF)
-    Frame::init(Communications::comms,
+    Frame::init(Communications::state_machine,
                 my_lpu_1, my_lpu_2, my_lpu_3, my_lpu_4, my_lpu_5, my_lpu_6, my_lpu_7, my_lpu_8, my_lpu_9, my_lpu_10,
                 my_airgap_1, my_airgap_2, my_airgap_3, my_airgap_4, my_airgap_5, my_airgap_6, my_airgap_7, my_airgap_8,
-                Communications::comms,
+                Communications::control,
                 my_lpu_1, my_lpu_2, my_lpu_3, my_lpu_4, my_lpu_5, my_lpu_6, my_lpu_7, my_lpu_8, my_lpu_9, my_lpu_10);
 #endif
 }
@@ -258,7 +257,7 @@ inline void update() {
     Scheduler::update();
     MDMA::update();
     if (reset_counter >= 5) {
-        HAL_Delay(100); // Delay in case more faults are coming in rapidly
+        HAL_Delay(1000); // Delay in case more faults are coming in rapidly
         HAL_NVIC_SystemReset();
     }
 }

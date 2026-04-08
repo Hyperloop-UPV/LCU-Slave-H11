@@ -2,149 +2,103 @@
 #define COMMUNICATIONS_HPP
 
 #include "LCU_SLAVE_Types.hpp"
-#include "StateMachine/LCU_StateMachine.hpp"
 #include "ConfigShared.hpp"
-#include "CommunicationsShared.hpp"
+#include "ControlShared.hpp"
+#include "StateMachineShared.hpp"
+#include "SharedCommunicationsLogic.hpp"
+#include "Common/Flags.hpp"
 
 namespace Communications {
 
-// Communications object to hold command/status packets
-inline CommunicationsBase comms;
+// Communications objects to hold control and state
+inline ControlBase control;
+inline StateMachineBase state_machine;
 
 // SPI
 inline LCU_Slave::SpiType* g_spi = nullptr;
 inline ST_LIB::DigitalOutputDomain::Instance* g_slave_ready = nullptr;
 
-// Inner State Machine flags
-volatile bool send_flag = false;
-volatile bool spi_flag = false;
-volatile bool receive_flag = false;
-volatile bool operation_flag = false;
+// Debug/Control Flags
+inline uint16_t fixed_pwm_active = 0;  // Track if any LPU has fixed PWM enabled, as a bitmask
 
-// Error handling
-#ifdef USE_SPI_ERROR
-uint32_t spi_error_counter = LCU_Slave::MAX_SPI_ERRORS; // Start with errors to force sync
-#ifdef USE_SPI_TIMEOUT
-uint32_t spi_timeout_counter = 0;
-#endif // USE_SPI_TIMEOUT
-#endif // USE_SPI_ERROR
+// Connection tracking
+inline bool spi_connected = false;  // Set to true on first successful packet, false on error
 
 // ============================================
-// Status Reporting
+// SPI Callbacks for Slave Mode
 // ============================================
+struct SlaveSPICallbacks {
+    static void on_prepare_tx() {
+        // Assert NSS
+        g_spi->assert_nss();
+    }
 
-inline void update_status() {
-    auto& status = comms.status_packet;
-    status.slave_state = LCU_SM::sm_operational.get_current_state();
-}
+    static void on_spi_start() {
+        g_slave_ready->turn_on();
+    }
+
+    static void on_spi_complete() {
+        g_slave_ready->turn_off();
+        g_spi->deassert_nss();
+    }
+
+    static void on_data_received() {
+        spi_connected = true;
+        fixed_pwm_active = 0;
+#ifdef USE_1_DOF
+        if (LCU_Slave::g_lpu_array->get_lpu<0>().is_fixed_duty_cycle) {
+            fixed_pwm_active |= (1 << 0);
+        }
+#elif defined(USE_5_DOF)
+        for (int i = 0; i < 10; ++i) {
+            if (LCU_Slave::g_lpu_array->get_lpu<i>().is_fixed_duty_cycle) {
+                fixed_pwm_active |= (1 << i);
+            }
+        }
+#endif
+    }
+
+    static void on_frame_error() {
+        spi_connected = false;
+        g_slave_ready->turn_off();
+        g_spi->deassert_nss();
+    }
+};
+
+// ============================================
+// SPI Communication Logic Instance
+// ============================================
+using SlaveSPILogic = SharedSPICommunicationLogic<
+    LCU_Slave::Frame,
+    ST_LIB::SPIDomain::SPIWrapper<LCU_Slave::spi_req>,
+    SlaveSPICallbacks,
+    false,                      // IsMaster (Slave mode)
+    ENABLE_SPI_ERROR_HANDLING,  // EnableErrorHandling
+    10,                         // MaxErrors (matches LCU_Slave::MAX_SPI_ERRORS)
+    ENABLE_SPI_TIMEOUT,         // EnableTimeout
+    1000                        // TimeoutMs
+>;
+
+inline SlaveSPILogic spi_logic;
 
 // ============================================
 // Main Update
 // ============================================
 
 inline void init() {
-    LCU_SM::set_command_packet(&comms.command_packet);
-#ifdef USE_SPI_ERROR
-    LCU_SM::set_spi_error_counter_ptr(&spi_error_counter);
-#endif
+    spi_logic.init(g_spi);
 }
 
 inline void update() {
-    update_status();
-
-#ifdef USE_SPI_ERROR
-    if (operation_flag) {
-        if (g_spi->was_aborted()) {
-            g_spi->clear_abort_flag();
-            spi_error_counter++;
-            operation_flag = false;
-            send_flag = false;
-            spi_flag = false;
-            receive_flag = false;
-            g_slave_ready->turn_off();
-            g_spi->set_software_nss(false);
-        }
+    // Slave is always ready for SPI transfer when requested
+    if (spi_logic.waiting_for_ready) {
+        spi_logic.ready_for_transfer(); // Slave is always ready
     }
+    spi_logic.update();
+}
 
-#ifdef USE_SPI_TIMEOUT
-    if (operation_flag) {
-        spi_timeout_counter++;
-        if (spi_timeout_counter > LCU_Slave::SPI_TIMEOUT_LIMIT) {
-            spi_error_counter++;
-            spi_timeout_counter = 0;
-
-            // Reset state machine (SPI is already reset on error)
-            operation_flag = false;
-            send_flag = false;
-            spi_flag = false;
-            receive_flag = false;
-            g_slave_ready->turn_off();
-            g_spi->set_software_nss(false);
-        }
-    } else {
-        spi_timeout_counter = 0;
-    }
-#endif // USE_SPI_TIMEOUT
-#endif // USE_SPI_ERROR
-
-    if (!operation_flag) {
-        operation_flag = true;
-        LCU_Slave::Frame::update_tx(&send_flag);
-
-    } else if (send_flag) {
-        send_flag = false;
-        g_spi->transceive(LCU_Slave::Frame::tx_buffer, LCU_Slave::Frame::rx_buffer, &spi_flag);
-        g_spi->set_software_nss(true);
-        g_slave_ready->turn_on();
-
-    } else if (spi_flag) {
-        spi_flag = false;
-        g_slave_ready->turn_off();
-        g_spi->set_software_nss(false);
-
-#ifdef USE_SPI_ERROR
-        // Preemptive packet validation
-        if (((LCU_Slave::Frame::rx_buffer[1] << 8) + LCU_Slave::Frame::rx_buffer[0]) !=
-            CommandPacket::START_BYTE) {
-            spi_error_counter++;
-
-            if (spi_error_counter > LCU_Slave::MAX_SPI_ERRORS) {
-                spi_error_counter = LCU_Slave::MAX_SPI_ERRORS;
-            }
-            operation_flag = false; // Reset state machine on error
-        } else {
-            // Success
-            LCU_Slave::Frame::update_rx(&receive_flag);
-            if (spi_error_counter > 0)
-                spi_error_counter--;
-        }
-#else
-        LCU_Slave::Frame::update_rx(&receive_flag);
-#endif
-
-    } else if (receive_flag) {
-        receive_flag = false;
-        operation_flag = false;
-
-#ifdef USE_SPI_ERROR
-        // Packet Validation
-        auto& cmd = comms.command_packet;
-
-        if (cmd.start_byte != CommandPacket::START_BYTE ||
-            cmd.end_byte != CommandPacket::END_BYTE) {
-
-            spi_error_counter++;
-
-            if (spi_error_counter > LCU_Slave::MAX_SPI_ERRORS) {
-                spi_error_counter = LCU_Slave::MAX_SPI_ERRORS;
-            }
-        } else {
-            // Success
-            if (spi_error_counter > 0)
-                spi_error_counter--;
-        }
-#endif
-    }
+inline bool is_spi_connected() {
+    return spi_connected;
 }
 } // namespace Communications
 

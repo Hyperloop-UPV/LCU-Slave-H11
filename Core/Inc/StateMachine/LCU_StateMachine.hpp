@@ -1,131 +1,291 @@
 #ifndef LCU_STATE_MACHINE_HPP
 #define LCU_STATE_MACHINE_HPP
 
-#include "ST-LIB_LOW/StateMachine/StateMachine.hpp"
+#include "C++Utilities/CppImports.hpp"
 #include "LCU_SLAVE_Types.hpp"
 #include "Control/Control.hpp"
-#include "CommunicationsShared.hpp"
+#include "ControlShared.hpp"
+
+// Forward declare Communications to avoid circular dependency
+namespace Communications {
+    extern ControlBase control;
+    extern uint16_t fixed_pwm_active;
+    bool is_spi_connected();
+}
 
 namespace LCU_SM {
 
-inline volatile CommandPacket* command_packet = nullptr;
-inline volatile StatusPacket* status_packet = nullptr;
-#ifdef USE_SPI_ERROR
-inline volatile uint32_t* spi_error_counter = nullptr;
-#endif
-
-inline void set_command_packet(volatile CommandPacket* ptr) { command_packet = ptr; }
-#ifdef USE_SPI_ERROR
-inline void set_spi_error_counter_ptr(volatile uint32_t* ptr) { spi_error_counter = ptr; }
-#endif
-
 // ============================================
-// Operational State Machine
+// State Definitions
 // ============================================
 
-auto check_fault = []() {
-    return !LCU_Slave::g_lpu_array->is_all_ok() ||
-#ifdef USE_SPI_ERROR
-            (spi_error_counter && (*spi_error_counter >= LCU_Slave::MAX_SPI_ERRORS)) ||
-#endif
-            LCU_Slave::master_fault_triggered;
+enum class GeneralState : uint8_t {
+    Connecting = 0,
+    Operational = 1,
+    Fault = 2
 };
 
-static constexpr auto state_spi_connecting = make_state(
-    SlaveState::SPI_CONNECTING,
-    Transition{
-        SlaveState::IDLE,
-        []() {
-#ifdef USE_SPI_ERROR
-            // Transition to IDLE if connection
-            // is stable (counter is 0)
-            return *spi_error_counter == 0;
-#else
-            return true;
-#endif
-        }
-    },
-    Transition{SlaveState::FAULT, []() { return LCU_Slave::master_fault_triggered; }}
-);
+enum class OperationalState : uint8_t {
+    Idle = 0,
+    Levitating = 1,
+    Current_Control = 2,
+    Debug = 3
+};
 
-static constexpr auto state_idle = make_state(
-    SlaveState::IDLE,
-    Transition{
-        SlaveState::LEVITATING,
-        []() {
-            auto cmds = command_packet->flags;
-            return  bool(cmds & CommandFlags::LEVITATE) ||
-                    bool(cmds & CommandFlags::CURRENT_CONTROL);
-        }
+// ============================================
+// Helper Functions
+// ============================================
+
+// Check if buffers should be active based on control packet
+static inline bool should_buffers_be_active() {
+    auto& ctrl = Communications::control.control_packet;
+    return  ctrl.mode == ControlMode::DISTANCE_CONTROL || 
+            ctrl.mode == ControlMode::CURRENT_CONTROL ||
+            Communications::fixed_pwm_active != 0;
+}
+
+// Check if slave is connected to master
+static inline bool is_connected() {
+    return Communications::is_spi_connected();
+}
+
+// ============================================
+// Outer State Machine States
+// ============================================
+
+static constexpr auto connecting_state = make_state(
+    GeneralState::Connecting,
+    Transition<GeneralState>{
+        GeneralState::Operational,
+        []() { return is_connected(); }
     },
-    Transition{
-        SlaveState::FAULT,
-        check_fault
+    Transition<GeneralState>{
+        GeneralState::Fault,
+        []() { return LCU_Slave::master_fault_triggered; }
     }
 );
 
-static constexpr auto state_levitating = make_state(
-    SlaveState::LEVITATING,
-    Transition{
-        SlaveState::IDLE,
+static constexpr auto operational_state = make_state(
+    GeneralState::Operational,
+    Transition<GeneralState>{
+        GeneralState::Fault,
         []() {
-            auto cmds = command_packet->flags;
-            bool stop_requested =   !bool(cmds & CommandFlags::LEVITATE) &&
-                                    !bool(cmds & CommandFlags::CURRENT_CONTROL);
-            return stop_requested;
+            return !is_connected() || 
+                   LCU_Slave::master_fault_triggered ||
+                   !LCU_Slave::g_lpu_array->is_all_ok();
         }
-    },
-    Transition{
-        SlaveState::FAULT,
-        check_fault
     }
 );
 
-static constexpr auto state_fault = make_state(SlaveState::FAULT);
+static constexpr auto fault_state = make_state(GeneralState::Fault);
 
-static constinit auto sm_operational = []() consteval {
+// ============================================
+// Nested Operational State Machine States
+// ============================================
+
+static constexpr auto nested_idle_state = make_state(
+    OperationalState::Idle,
+    Transition<OperationalState>{
+        OperationalState::Levitating,
+        []() { 
+            return Communications::control.control_packet.mode == ControlMode::DISTANCE_CONTROL;
+        }
+    },
+    Transition<OperationalState>{
+        OperationalState::Current_Control,
+        []() {
+            return Communications::control.control_packet.mode == ControlMode::CURRENT_CONTROL;
+        }
+    },
+    Transition<OperationalState>{
+        OperationalState::Debug,
+        []() { return Communications::fixed_pwm_active != 0; }
+    }
+);
+
+static constexpr auto nested_levitating_state = make_state(
+    OperationalState::Levitating,
+    Transition<OperationalState>{
+        OperationalState::Idle,
+        []() {
+            auto& ctrl = Communications::control.control_packet;
+            return ctrl.mode != ControlMode::DISTANCE_CONTROL ||
+                   !LCU_Slave::g_lpu_array->is_all_ok();
+        }
+    }
+);
+
+static constexpr auto nested_current_control_state = make_state(
+    OperationalState::Current_Control,
+    Transition<OperationalState>{
+        OperationalState::Idle,
+        []() {
+            auto& ctrl = Communications::control.control_packet;
+            return ctrl.mode == ControlMode::NONE ||
+                   !LCU_Slave::g_lpu_array->is_all_ok();
+        }
+    }
+);
+
+static constexpr auto nested_debug_state = make_state(
+    OperationalState::Debug,
+    Transition<OperationalState>{
+        OperationalState::Idle,
+        []() { return Communications::fixed_pwm_active == 0 || !LCU_Slave::g_lpu_array->is_all_ok(); }
+    }
+);
+
+// ============================================
+// Nested State Machine for Operational
+// ============================================
+
+static inline constinit auto operational_state_machine = []() consteval {
     auto sm = make_state_machine(
-        SlaveState::SPI_CONNECTING,
-        state_spi_connecting,
-        state_idle,
-        state_levitating,
-        state_fault
+        OperationalState::Idle,
+        nested_idle_state,
+        nested_levitating_state,
+        nested_current_control_state,
+        nested_debug_state
     );
 
     using namespace std::chrono_literals;
 
-
-
+    // Enter Levitating: Enable LPUs and start control
     sm.add_enter_action(
         []() {
             LCU_Slave::g_led_operational->turn_on();
             Control::init();
             LCU_Slave::g_lpu_array->enable_all();
         },
-        state_levitating
+        nested_levitating_state
     );
 
+    // Exit Levitating: Disable LPUs and stop control
     sm.add_exit_action(
         []() {
             LCU_Slave::g_led_operational->turn_off();
             Control::deinit();
             LCU_Slave::g_lpu_array->disable_all();
         },
-        state_levitating
+        nested_levitating_state
     );
 
-    // Enter Fault: Safe State
+    // Enter Current Control: Enable LPUs
+    sm.add_enter_action(
+        []() {
+            Control::init();
+            LCU_Slave::g_lpu_array->enable_all();
+        },
+        nested_current_control_state
+    );
+
+    // Exit Current Control: Disable LPUs
+    sm.add_exit_action(
+        []() {
+            LCU_Slave::g_lpu_array->disable_all();
+            Control::deinit();
+        },
+        nested_current_control_state
+    );
+
+    // Enter Debug: Enable LPUs
+    sm.add_enter_action(
+        []() { LCU_Slave::g_lpu_array->enable_all(); },
+        nested_debug_state
+    );
+
+    // Exit Debug: Disable LPUs
+    sm.add_exit_action(
+        []() { LCU_Slave::g_lpu_array->disable_all(); },
+        nested_debug_state
+    );
+
+    // Cyclic actions for Levitating
+    sm.add_cyclic_action(
+        []() {
+            // Current control
+            auto target_voltage = Control::current_update();
+#ifdef USE_1_DOF
+            LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage);
+#elif defined(USE_5_DOF)
+            // TODO
+#endif
+        },
+        500us,
+        nested_levitating_state
+    );
+
+    sm.add_cyclic_action(
+        []() {
+            // Distance control
+            Control::levitation_update(Communications::control.control_packet.distance_control.desired_distance);
+        },
+        1000us,
+        nested_levitating_state
+    );
+
+    // Cyclic actions for Current Control
+    sm.add_cyclic_action(
+        []() {
+            auto target_voltage = Control::current_update(
+                Communications::control.control_packet.current_control.desired_current,
+                true
+            );
+
+#ifdef USE_1_DOF
+            LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage);
+#elif defined(USE_5_DOF)
+            // TODO
+#endif
+        },
+        500us,
+        nested_current_control_state
+    );
+
+    return sm;
+}();
+
+// ============================================
+// General State Machine (Outer)
+// ============================================
+
+static inline constinit auto general_state_machine = []() consteval {
+    auto nested = StateMachineHelper::add_nested_machines(
+        StateMachineHelper::add_nesting(operational_state, operational_state_machine)
+    );
+    auto sm = make_state_machine(
+        GeneralState::Connecting,
+        nested,
+        connecting_state,
+        operational_state,
+        fault_state
+    );
+
+    using namespace std::chrono_literals;
+
+    sm.add_enter_action(
+        []() { LCU_Slave::g_led_operational->turn_on(); },
+        operational_state
+    );
+
+    sm.add_exit_action(
+        []() { LCU_Slave::g_led_operational->turn_off(); },
+        operational_state
+    );
+
     sm.add_enter_action(
         []() {
             LCU_Slave::g_slave_fault->turn_on();
             LCU_Slave::g_led_fault->turn_on();
-            Control::deinit();
             LCU_Slave::g_lpu_array->disable_all();
             ErrorHandler("Entered Fault State");
-            // while (1)
-            //     ;
         },
-        state_fault
+        fault_state
+    );
+
+    sm.add_exit_action(
+        []() { LCU_Slave::g_led_fault->turn_off(); },
+        fault_state
     );
 
     sm.add_cyclic_action(
@@ -134,67 +294,7 @@ static constinit auto sm_operational = []() consteval {
             LCU_Slave::g_airgap_array->update();
         },
         100us,
-        state_levitating
-    );
-
-    sm.add_cyclic_action(
-        []() {
-            LCU_Slave::g_lpu_array->update_all();
-            LCU_Slave::g_airgap_array->update();
-        },
-        1ms,
-        state_idle
-    );
-
-    // Levitation Control
-
-    sm.add_cyclic_action(
-        []() {
-            bool levitate_active = bool(command_packet->flags & CommandFlags::LEVITATE);
-            bool direct_current_control = bool(command_packet->flags & CommandFlags::CURRENT_CONTROL);
-            auto target_voltage = Control::current_update(
-                command_packet->current_control.desired_current,
-                direct_current_control
-            );
-            uint16_t current_mask = command_packet->current_control.lpu_id_bitmask;
-            bool apply_to_all_for_levitation = levitate_active;
-            
-#ifdef USE_1_DOF
-            // 1-DOF: Single LPU
-            if (apply_to_all_for_levitation || (current_mask & (1 << 0))) {
-                LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage);
-            }
-            
-#elif defined(USE_5_DOF)
-            // 5-DOF: Apply to all 10 LPUs as specified in bitmask
-            if (apply_to_all_for_levitation || (current_mask & (1 << 0))) { LCU_Slave::g_lpu_array->get_lpu<0>().set_out_voltage(target_voltage); }
-            if (apply_to_all_for_levitation || (current_mask & (1 << 1))) { LCU_Slave::g_lpu_array->get_lpu<1>().set_out_voltage(target_voltage); }
-            if (apply_to_all_for_levitation || (current_mask & (1 << 2))) { LCU_Slave::g_lpu_array->get_lpu<2>().set_out_voltage(target_voltage); }
-            if (apply_to_all_for_levitation || (current_mask & (1 << 3))) { LCU_Slave::g_lpu_array->get_lpu<3>().set_out_voltage(target_voltage); }
-            if (apply_to_all_for_levitation || (current_mask & (1 << 4))) { LCU_Slave::g_lpu_array->get_lpu<4>().set_out_voltage(target_voltage); }
-            if (apply_to_all_for_levitation || (current_mask & (1 << 5))) { LCU_Slave::g_lpu_array->get_lpu<5>().set_out_voltage(target_voltage); }
-            if (apply_to_all_for_levitation || (current_mask & (1 << 6))) { LCU_Slave::g_lpu_array->get_lpu<6>().set_out_voltage(target_voltage); }
-            if (apply_to_all_for_levitation || (current_mask & (1 << 7))) { LCU_Slave::g_lpu_array->get_lpu<7>().set_out_voltage(target_voltage); }
-            if (apply_to_all_for_levitation || (current_mask & (1 << 8))) { LCU_Slave::g_lpu_array->get_lpu<8>().set_out_voltage(target_voltage); }
-            if (apply_to_all_for_levitation || (current_mask & (1 << 9))) { LCU_Slave::g_lpu_array->get_lpu<9>().set_out_voltage(target_voltage); }
-#endif
-        },
-        500us,
-        state_levitating
-    );
-
-    sm.add_cyclic_action(
-        []() {
-            bool levitate_active = bool(command_packet->flags & CommandFlags::LEVITATE);
-            bool direct_current_control = bool(command_packet->flags & CommandFlags::CURRENT_CONTROL);
-            if (levitate_active && !direct_current_control) {
-                Control::levitation_update(
-                    command_packet->levitate.desired_distance
-                );
-            }
-        },
-        1000us,
-        state_levitating
+        operational_state
     );
 
     return sm;
@@ -204,46 +304,12 @@ static constinit auto sm_operational = []() consteval {
 // Public Interface
 // ============================================
 
-inline void start() { sm_operational.start(); }
+inline void start() {
+    general_state_machine.start();
+}
 
 inline void update() {
-    sm_operational.check_transitions();
-
-    // General commands
-    auto cmds = command_packet->flags;
-    static bool was_enabled = false;
-    if (bool(cmds & CommandFlags::ENABLE_LPU_BUFFER)) {
-        uint16_t buffer_mask = command_packet->force_enable_lpu_buffer.lpu_buffer_id_bitmask;
-        
-#ifdef USE_1_DOF
-        // 1-DOF: Single LPU pair
-        if (buffer_mask & 0x03) { LCU_Slave::g_lpu_array->enable_pair<0>(); }
-        else { LCU_Slave::g_lpu_array->disable_pair<0>(); }
-        
-#elif defined(USE_5_DOF)
-        // 5-DOF: Enable LPU pairs based on bitmask
-        // Each pair corresponds to 1 bit in the mask
-        if (buffer_mask & 0x01) { LCU_Slave::g_lpu_array->enable_pair<0>(); }  // Pair 0 (LPU 0-1)
-        else { LCU_Slave::g_lpu_array->disable_pair<0>(); }
-         if (buffer_mask & 0x02) { LCU_Slave::g_lpu_array->enable_pair<1>(); }  // Pair 1 (LPU 2-3)
-        else { LCU_Slave::g_lpu_array->disable_pair<1>(); }
-        if (buffer_mask & 0x04) { LCU_Slave::g_lpu_array->enable_pair<2>(); }  // Pair 2 (LPU 4-5)
-        else { LCU_Slave::g_lpu_array->disable_pair<2>(); }
-        if (buffer_mask & 0x08) { LCU_Slave::g_lpu_array->enable_pair<3>(); }  // Pair 3 (LPU 6-7)
-        else { LCU_Slave::g_lpu_array->disable_pair<3>(); }
-        if (buffer_mask & 0x10) { LCU_Slave::g_lpu_array->enable_pair<4>(); }  // Pair 4 (LPU 8-9)
-        else { LCU_Slave::g_lpu_array->disable_pair<4>(); }
-#endif
-        
-        was_enabled = true;
-    } else if (was_enabled) {
-        if (sm_operational.get_current_state() == SlaveState::LEVITATING) {
-            LCU_Slave::g_lpu_array->disable_all();
-        } else {
-            LCU_Slave::g_lpu_array->disable_all();
-        }
-        was_enabled = false;
-    }
+    general_state_machine.check_transitions();
 }
 
 } // namespace LCU_SM

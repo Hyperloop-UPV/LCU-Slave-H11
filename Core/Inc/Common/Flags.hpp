@@ -1,10 +1,12 @@
 #ifndef FLAGS_HPP
 #define FLAGS_HPP
 
-// #define USE_SPI_ERROR
-#ifdef USE_SPI_ERROR
-// #define USE_SPI_TIMEOUT
-#endif
+// ============================================
+// SPI Communication Flags
+// ============================================
+constexpr bool ENABLE_SPI_ERROR_HANDLING = false;
+constexpr bool ENABLE_SPI_TIMEOUT = false;
+
 // #define USE_LPU_FAULT
 // #define USE_LPU_READY
 
