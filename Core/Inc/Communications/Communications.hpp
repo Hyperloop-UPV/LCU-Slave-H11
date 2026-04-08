@@ -30,7 +30,7 @@ inline bool spi_connected = false;  // Set to true on first successful packet, f
 struct SlaveSPICallbacks {
     static void on_prepare_tx() {
         // Assert NSS
-        g_spi->assert_nss();
+        g_spi->set_software_nss(true);
     }
 
     static void on_spi_start() {
@@ -39,7 +39,7 @@ struct SlaveSPICallbacks {
 
     static void on_spi_complete() {
         g_slave_ready->turn_off();
-        g_spi->deassert_nss();
+        g_spi->set_software_nss(false);
     }
 
     static void on_data_received() {
@@ -61,7 +61,7 @@ struct SlaveSPICallbacks {
     static void on_frame_error() {
         spi_connected = false;
         g_slave_ready->turn_off();
-        g_spi->deassert_nss();
+        g_spi->set_software_nss(false);
     }
 };
 
