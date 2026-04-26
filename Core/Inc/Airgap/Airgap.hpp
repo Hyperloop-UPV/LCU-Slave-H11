@@ -33,10 +33,8 @@ public:
     }
 };
 
-template <typename AirgapTuple> class AirgapArray;
-
 template <typename... AirgapInstances>
-class AirgapArray<std::tuple<AirgapInstances...>> {
+class AirgapArray {
     static constexpr size_t AirgapCount = sizeof...(AirgapInstances);
 
     using AirgapPtrTuple = std::tuple<std::remove_reference_t<AirgapInstances>*...>;
@@ -44,10 +42,8 @@ class AirgapArray<std::tuple<AirgapInstances...>> {
     AirgapPtrTuple airgap_instances;
 
 public:
-    AirgapArray(std::tuple<AirgapInstances&...> _instances) {
-        airgap_instances =
-            std::apply([](auto&... instance) { return std::make_tuple(&instance...); }, _instances);
-    }
+    explicit AirgapArray(AirgapInstances&... instances)
+        : airgap_instances(std::make_tuple(&instances...)) {}
 
     void update() {
         std::apply([](auto*... instance) { (instance->update(), ...); }, airgap_instances);
@@ -61,5 +57,9 @@ public:
         return *std::get<Index>(airgap_instances);
     }
 };
+
+// Deduction guide for direct construction from references.
+template <typename... AirgapInstances>
+AirgapArray(AirgapInstances&...) -> AirgapArray<AirgapInstances...>;
 
 #endif // AIRGAP_HPP

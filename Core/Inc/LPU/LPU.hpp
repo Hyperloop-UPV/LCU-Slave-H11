@@ -8,7 +8,7 @@
 #include "HALAL/Services/ADC/ADC.hpp"
 #include "Control/Blocks/MovingAverage.hpp"
 
-template <typename PWMPositive, typename PWMNegative, uint32_t ShuntMovingAverageSize, uint32_t VbatMovingAverageSize> class LPU : public LPUBase {
+template <uint32_t ShuntMovingAverageSize, uint32_t VbatMovingAverageSize, typename PWMPositive, typename PWMNegative> class LPU : public LPUBase {
 public:
     LPU(PWMPositive& pwm_positive,
         PWMNegative& pwm_negative,
@@ -207,5 +207,32 @@ public:
 template <typename... LPUs, typename... EnablePins>
 LpuArray(std::tuple<LPUs&...>, std::tuple<EnablePins&...>)
     -> LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>>;
+
+// Deduce PWM types while keeping the project-standard moving-average sizes.
+template <uint32_t ShuntMovingAverageSize, uint32_t VbatMovingAverageSize, typename PWMPositive, typename PWMNegative>
+inline auto make_lpu(
+    PWMPositive& pwm_positive,
+    PWMNegative& pwm_negative,
+    ST_LIB::ADCDomain::Instance& adc_vbat_instance,
+    ST_LIB::ADCDomain::Instance& adc_shunt_instance,
+    float vbat_offset,
+    float vbat_slope,
+    float shunt_offset,
+    float shunt_slope
+) {
+    using PWMPositiveType = std::remove_reference_t<PWMPositive>;
+    using PWMNegativeType = std::remove_reference_t<PWMNegative>;
+
+    return LPU<ShuntMovingAverageSize, VbatMovingAverageSize, PWMPositiveType, PWMNegativeType>(
+        pwm_positive,
+        pwm_negative,
+        adc_vbat_instance,
+        adc_shunt_instance,
+        vbat_offset,
+        vbat_slope,
+        shunt_offset,
+        shunt_slope
+    );
+}
 
 #endif // LPU_HPP
