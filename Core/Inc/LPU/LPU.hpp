@@ -9,6 +9,9 @@
 #include "Control/Blocks/MovingAverage.hpp"
 
 template <uint32_t ShuntMovingAverageSize, uint32_t VbatMovingAverageSize, typename PWMPositive, typename PWMNegative> class LPU : public LPUBase {
+
+bool was_fixed_duty_cycle = false; // Temporal fix
+
 public:
     LPU(PWMPositive& pwm_positive,
         PWMNegative& pwm_negative,
@@ -38,6 +41,10 @@ public:
 
         if (is_fixed_duty_cycle) {
             set_duty(fixed_duty_cycle);
+            was_fixed_duty_cycle = true;
+        } else if (was_fixed_duty_cycle) {
+            set_duty(0.0f);
+            was_fixed_duty_cycle = false;
         }
 
         return true;
