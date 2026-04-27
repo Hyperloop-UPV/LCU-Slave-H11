@@ -21,7 +21,9 @@ public:
         : pwm_positive(pwm_positive), pwm_negative(pwm_negative),
           shunt_moving_avg(), vbat_moving_avg(),
           vbat_sensor(adc_vbat_instance, vbat_slope, vbat_offset, &vbat_v, vbat_moving_avg),
-          shunt_sensor(adc_shunt_instance, shunt_slope, shunt_offset, &shunt_v, shunt_moving_avg) {
+          shunt_sensor(adc_shunt_instance, shunt_slope, shunt_offset, &shunt_v, shunt_moving_avg) {}
+
+    void init() {
         pwm_positive.turn_on();
         pwm_negative.turn_on();
     }
@@ -149,6 +151,10 @@ public:
     LpuArray(std::tuple<LPUs&...> _lpus, std::tuple<EnablePins&...> _pins) {
         lpus = std::apply([](auto&... lpu) { return std::make_tuple(&lpu...); }, _lpus);
         enable_pins = std::apply([](auto&... pin) { return std::make_tuple(&pin...); }, _pins);
+    }
+
+    void init() {
+        std::apply([](auto&... lpu) { (lpu->init(), ...); }, lpus);
         disable_all();
     }
 

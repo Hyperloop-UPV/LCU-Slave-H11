@@ -27,6 +27,8 @@ void init() {
 
 #endif
 
+    lpu_array.init();
+
     MDMA::start();
 
     Communications::init();
