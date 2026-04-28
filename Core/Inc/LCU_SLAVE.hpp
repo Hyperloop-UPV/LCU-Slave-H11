@@ -398,7 +398,7 @@ inline auto lpu2 = make_lpu<1, 1>(
     0.0f, 1.0f,
     0.0f, 1.0f
 );
-inline auto lpu3 = make_lpu<1, 1>( // PWM negative doesn't work
+inline auto lpu3 = make_lpu<1, 1>(
     pwm_positive_3, pwm_negative_3,
     adc_vbat_3, adc_shunt_3,
     0.0f, 1.0f,
@@ -410,7 +410,7 @@ inline auto lpu4 = make_lpu<1, 1>(
     0.0f, 1.0f,
     310.3f, -181.0f // Characterized for LPU2
 );
-inline auto lpu5 = make_lpu<1, 1>( // PWM negative doesn't work
+inline auto lpu5 = make_lpu<1, 1>(
     pwm_positive_5, pwm_negative_5,
     adc_vbat_5, adc_shunt_5,
     0.0f, 1.0f,
@@ -434,7 +434,7 @@ inline auto lpu8 = make_lpu<1, 1>(
     0.0f, 1.0f,
     321.2f, -188.5f // Characterized for LPU4
 );
-inline auto lpu9 = make_lpu<1, 1>( // PWM negative doesn't work
+inline auto lpu9 = make_lpu<1, 1>(
     pwm_positive_9, pwm_negative_9,
     adc_vbat_9, adc_shunt_9,
     0.0f, 1.0f,
