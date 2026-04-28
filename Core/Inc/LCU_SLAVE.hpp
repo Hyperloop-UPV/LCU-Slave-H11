@@ -390,61 +390,61 @@ inline auto lpu1 = make_lpu<1, 1>(
     pwm_positive_1, pwm_negative_1,
     adc_vbat_1, adc_shunt_1,
     0.0f, 1.0f,
-    344.5f, -197.1f
+    0.0f, 1.0f
 );
 inline auto lpu2 = make_lpu<1, 1>(
     pwm_positive_2, pwm_negative_2,
     adc_vbat_2, adc_shunt_2,
     0.0f, 1.0f,
-    344.5f, -197.1f
+    0.0f, 1.0f
 );
-inline auto lpu3 = make_lpu<1, 1>(
+inline auto lpu3 = make_lpu<1, 1>( // PWM negative doesn't work
     pwm_positive_3, pwm_negative_3,
     adc_vbat_3, adc_shunt_3,
     0.0f, 1.0f,
-    344.5f, -197.1f
+    0.0f, 1.0f
 );
 inline auto lpu4 = make_lpu<1, 1>(
     pwm_positive_4, pwm_negative_4,
     adc_vbat_4, adc_shunt_4,
     0.0f, 1.0f,
-    344.5f, -197.1f
+    310.3f, -181.0f // Characterized for LPU2
 );
-inline auto lpu5 = make_lpu<1, 1>(
+inline auto lpu5 = make_lpu<1, 1>( // PWM negative doesn't work
     pwm_positive_5, pwm_negative_5,
     adc_vbat_5, adc_shunt_5,
     0.0f, 1.0f,
-    344.5f, -197.1f
+    0.0f, 1.0f
 );
 inline auto lpu6 = make_lpu<1, 1>(
     pwm_positive_6, pwm_negative_6,
     adc_vbat_6, adc_shunt_6,
     0.0f, 1.0f,
-    344.5f, -197.1f
+    306.3f, -178.6f // Characterized for LPU7
 );
 inline auto lpu7 = make_lpu<1, 1>(
     pwm_positive_7, pwm_negative_7,
     adc_vbat_7, adc_shunt_7,
     0.0f, 1.0f,
-    344.5f, -197.1f
+    0.0f, 1.0f
 );
 inline auto lpu8 = make_lpu<1, 1>(
     pwm_positive_8, pwm_negative_8,
     adc_vbat_8, adc_shunt_8,
     0.0f, 1.0f,
-    344.5f, -197.1f
+    321.2f, -188.5f // Characterized for LPU4
 );
-inline auto lpu9 = make_lpu<1, 1>(
+inline auto lpu9 = make_lpu<1, 1>( // PWM negative doesn't work
     pwm_positive_9, pwm_negative_9,
     adc_vbat_9, adc_shunt_9,
     0.0f, 1.0f,
-    344.5f, -197.1f
+    0.0f, 1.0f
 );
 inline auto lpu10 = make_lpu<1, 1>(
     pwm_positive_10, pwm_negative_10,
     adc_vbat_10, adc_shunt_10,
     0.0f, 1.0f,
-    344.5f, -197.1f
+    310.8f, -181.2f // Characterized for LPU1
 );
 inline auto lpu_array = LpuArray(
     std::tie(lpu1, lpu2, lpu3, lpu4, lpu5, lpu6, lpu7, lpu8, lpu9, lpu10),

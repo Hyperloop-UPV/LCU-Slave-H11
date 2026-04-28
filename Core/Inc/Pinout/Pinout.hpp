@@ -53,8 +53,8 @@ inline auto constexpr pwm4_channel_1 = ST_LIB::TimerChannel::CHANNEL_1;
 inline auto constexpr pwm4_channel_2 = ST_LIB::TimerChannel::CHANNEL_2;
 
 inline auto constexpr timer4 = ST_LIB::TimerRequest::GeneralPurpose_4;
-inline auto& pwm5_1 = ST_LIB::PD15;
-inline auto& pwm5_2 = ST_LIB::PD14;
+inline auto& pwm5_1 = ST_LIB::PD14;
+inline auto& pwm5_2 = ST_LIB::PD15;
 inline auto constexpr pwm5_channel_1 = ST_LIB::TimerChannel::CHANNEL_3;
 inline auto constexpr pwm5_channel_2 = ST_LIB::TimerChannel::CHANNEL_4;
 inline auto& pwm6_1 = ST_LIB::PD12;
