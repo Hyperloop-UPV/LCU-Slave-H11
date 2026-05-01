@@ -3,21 +3,21 @@
 
 #include "C++Utilities/CppImports.hpp"
 
-#ifdef USE_1_DOF
+// #ifdef USE_1_DOF
 extern "C" {
 #include "control.h"
 }
-#endif
+// #endif
 
-#ifdef USE_5_DOF
-#include "C_5DOF_EL.h"
-#endif
+// #ifdef USE_5_DOF
+// #include "control.h"
+// #endif
 
 namespace Control {
 
 #ifdef USE_5_DOF
-inline C_5DOF_EL control{};
-inline C_5DOF_EL::ExtU_C_5DOF_EL_T inputs{};
+// inline C_5DOF_EL control{};
+// inline C_5DOF_EL::ExtU_C_5DOF_EL_T inputs{};
 #endif
 
 struct ControlOutput {
@@ -25,7 +25,7 @@ struct ControlOutput {
     float voltage;
     float z1, z2, z3;
 #elif defined(USE_5_DOF)
-    std::array<float, 10> voltages;
+    std::array<float, 4> voltages;
 #endif
 };
 
@@ -33,8 +33,7 @@ inline void init() {
 #ifdef USE_1_DOF
     control_initialize();
 #elif defined(USE_5_DOF)
-    control.initialize();
-    control.setExternalInputs(&inputs);
+    control_initialize();
 #endif
 }
 
@@ -46,7 +45,7 @@ inline void deinit() {
 #ifdef USE_1_DOF
     control_terminate();
 #elif defined(USE_5_DOF)
-    control.terminate();
+    control_terminate();
 #endif
 }
 

@@ -54,11 +54,11 @@ public:
      * @brief Set the duty cycle based on the desired output voltage and the current battery voltage
      */
     bool set_out_voltage(float voltage) {
-        if (voltage > 80.0f) {
-            voltage = 80.0f;
-        } else if (voltage < -80.0f) {
-            voltage = -80.0f;
-        }
+        // if (voltage > 80.0f) {
+        //     voltage = 80.0f;
+        // } else if (voltage < -80.0f) {
+        //     voltage = -80.0f;
+        // }
         if (is_fixed_duty_cycle) {
             return true;
         }

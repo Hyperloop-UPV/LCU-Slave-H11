@@ -16,14 +16,14 @@ void init() {
     timer.set_pwm_frequency(10'000); // 10khz
 
 #elif defined(USE_5_DOF)
-    timer15.set_pwm_frequency(10'000);
-    timer3.set_pwm_frequency(10'000);
-    timer8.set_pwm_frequency(10'000);
-    timer4.set_pwm_frequency(10'000);
-    timer17.set_pwm_frequency(10'000);
-    timer16.set_pwm_frequency(10'000);
-    timer12.set_pwm_frequency(10'000);
-    timer1.set_pwm_frequency(10'000);
+    timer15.set_pwm_frequency(20'000);
+    timer3.set_pwm_frequency(20'000);
+    timer8.set_pwm_frequency(20'000);
+    timer4.set_pwm_frequency(20'000);
+    timer17.set_pwm_frequency(20'000);
+    timer16.set_pwm_frequency(20'000);
+    timer12.set_pwm_frequency(20'000);
+    timer1.set_pwm_frequency(20'000);
 
 #endif
 

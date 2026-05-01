@@ -107,16 +107,10 @@ void cyclic_levitate_control_current() {
     
 #elif defined(USE_5_DOF)
     // 5-DOF: Apply to all 10 LPUs as specified in bitmask
-    if (apply_to_all_for_levitation || (current_mask & (1 << 0))) { LCU_Slave::lpu_array.get_lpu<0>().set_out_voltage(control_output.voltages[0]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 1))) { LCU_Slave::lpu_array.get_lpu<1>().set_out_voltage(control_output.voltages[1]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 2))) { LCU_Slave::lpu_array.get_lpu<2>().set_out_voltage(control_output.voltages[2]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 3))) { LCU_Slave::lpu_array.get_lpu<3>().set_out_voltage(control_output.voltages[3]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 4))) { LCU_Slave::lpu_array.get_lpu<4>().set_out_voltage(control_output.voltages[4]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 5))) { LCU_Slave::lpu_array.get_lpu<5>().set_out_voltage(control_output.voltages[5]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 6))) { LCU_Slave::lpu_array.get_lpu<6>().set_out_voltage(control_output.voltages[6]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 7))) { LCU_Slave::lpu_array.get_lpu<7>().set_out_voltage(control_output.voltages[7]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 8))) { LCU_Slave::lpu_array.get_lpu<8>().set_out_voltage(control_output.voltages[8]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 9))) { LCU_Slave::lpu_array.get_lpu<9>().set_out_voltage(control_output.voltages[9]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 3))) { LCU_Slave::lpu_array.get_lpu<9>().set_out_voltage(control_output.voltages[0]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 5))) { LCU_Slave::lpu_array.get_lpu<3>().set_out_voltage(control_output.voltages[1]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 7))) { LCU_Slave::lpu_array.get_lpu<7>().set_out_voltage(control_output.voltages[2]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 9))) { LCU_Slave::lpu_array.get_lpu<5>().set_out_voltage(control_output.voltages[3]); }
 #endif
 }
 
