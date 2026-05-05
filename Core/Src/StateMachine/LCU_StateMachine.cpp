@@ -90,6 +90,11 @@ void cyclic_idle_sensors() {
     LCU_Slave::lpu_array.update_all();
 }
 
+void update_sensors() {
+    LCU_Slave::airgap_array.update();
+    LCU_Slave::lpu_array.update_all();
+}
+
 void cyclic_levitate_control_current() {
     bool levitate_active = bool(command_packet->flags & CommandFlags::LEVITATE);
     bool direct_current_control = bool(command_packet->flags & CommandFlags::CURRENT_CONTROL);
@@ -122,6 +127,10 @@ void cyclic_levitate_control_distance() {
             command_packet->levitate.desired_distance
         );
     }
+}
+
+void start() {
+    Scheduler::register_task(100, update_sensors);
 }
 
 void update() {

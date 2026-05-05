@@ -24,7 +24,7 @@ void init() {
     timer16.set_pwm_frequency(20'000);
     timer12.set_pwm_frequency(20'000);
     timer1.set_pwm_frequency(20'000);
-
+    
 #endif
 
     lpu_array.init();
@@ -34,6 +34,7 @@ void init() {
     Communications::init();
 
     LCU_SM::set_command_packet(&Communications::comms.command_packet);
+    LCU_SM::start();
 
 #ifdef USE_1_DOF
     Frame::init(Communications::comms, lpu, airgap, Communications::comms, lpu);

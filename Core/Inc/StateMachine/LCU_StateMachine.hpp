@@ -11,6 +11,7 @@ namespace LCU_SM {
  * Public API
  */
 void update();
+void start();
 
 // (TODO) Clean this up
 
@@ -77,12 +78,12 @@ static constinit auto sm_operational = []() consteval {
     using namespace std::chrono_literals;
 
     // Idle state
-    sm.add_cyclic_action(cyclic_idle_sensors, 1ms, state_idle);
+    // sm.add_cyclic_action(cyclic_idle_sensors, 1ms, state_idle);
 
     // Levitating state
     sm.add_enter_action(on_levitate_enter, state_levitating);
     sm.add_exit_action(on_levitate_exit, state_levitating);
-    sm.add_cyclic_action(cyclic_levitate_sensors, 100us, state_levitating);
+    // sm.add_cyclic_action(cyclic_levitate_sensors, 100us, state_levitating);
     sm.add_cyclic_action(cyclic_levitate_control_current, 500us, state_levitating);
     sm.add_cyclic_action(cyclic_levitate_control_distance, 1000us, state_levitating);
 
