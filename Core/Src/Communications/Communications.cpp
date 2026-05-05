@@ -11,6 +11,7 @@ void update_status() {
 
 void init() {
     LCU_SM::set_command_packet(&comms.command_packet);
+    LCU_SM::set_status_packet(&comms.status_packet);
 #ifdef USE_SPI_ERROR
     LCU_SM::set_spi_error_counter_ptr(&spi_error_counter);
 #endif

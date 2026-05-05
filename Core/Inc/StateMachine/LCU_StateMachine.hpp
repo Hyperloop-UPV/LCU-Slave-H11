@@ -22,6 +22,7 @@ inline volatile uint32_t* spi_error_counter = nullptr;
 #endif
 
 inline void set_command_packet(volatile CommandPacket* ptr) { command_packet = ptr; }
+inline void set_status_packet(volatile StatusPacket* ptr) { status_packet = ptr; }
 #ifdef USE_SPI_ERROR
 inline void set_spi_error_counter_ptr(volatile uint32_t* ptr) { spi_error_counter = ptr; }
 #endif

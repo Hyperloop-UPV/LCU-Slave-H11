@@ -62,6 +62,10 @@ void update() {
         HAL_Delay(100); // Delay in case more faults are coming in rapidly
         HAL_NVIC_SystemReset();
     }
+
+    if (abs(lpu4.shunt_v) > 60.0f || abs(lpu6.shunt_v) > 60.0f || abs(lpu8.shunt_v) > 60.0f || abs(lpu10.shunt_v) > 60.0f) {
+        PANIC("Overcurrent detected");
+    }
 }
 
 } // Namespace LCU_Slave

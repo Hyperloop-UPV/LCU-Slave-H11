@@ -28,6 +28,8 @@ ControlOutput current_update(std::optional<float> desired_current) {
         control_DW.Corriente_Buffer0[2] = desired_current.value();
         control_DW.Corriente_Buffer0[3] = desired_current.value();
     }
+ 
+    control_step0();
     
     return ControlOutput{control_Y.I[0], control_Y.I[1], control_Y.I[2], control_Y.I[3]};
 #endif

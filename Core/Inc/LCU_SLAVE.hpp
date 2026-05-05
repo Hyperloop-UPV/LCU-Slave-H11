@@ -265,6 +265,8 @@ inline constexpr auto slave_ready_req = ST_LIB::DigitalOutputDomain::DigitalOutp
 
 using Frame = SystemFrame<false>; // false for Slave
 
+
+
 using BoardPolicy = ST_LIB::FaultPolicy<LCU_SM::sm_operational, LCU_SM::on_fault_enter>;
 
 using Board = ST_LIB::Board<
@@ -297,7 +299,7 @@ using Board = ST_LIB::Board<
 //         test_protection_rules
 //     >;
 
-using AppProtectionEngine = Protections::ProtectionEngine</*TestProtection*/>;
+
 
 inline constexpr auto& led_operational = Board::instance_of<led_operational_req>();
 inline constexpr auto& led_fault = Board::instance_of<led_fault_req>();
@@ -451,16 +453,69 @@ inline auto lpu_array = LpuArray(
     std::tie(en_buff_1, en_buff_2, en_buff_3, en_buff_4, en_buff_5)
 );
 inline auto airgap1 = Airgap<8>(adc_airgap_1, 0.00000f, 1);
-inline auto airgap2 = Airgap<8>(adc_airgap_2, (8.0805f /1000) +114.0/1000, -0.0151057401813);
-inline auto airgap3 = Airgap<8>(adc_airgap_3, (10.9965 /1000) +114.0/1000, -0.0113378684807);
-inline auto airgap4 = Airgap<8>(adc_airgap_4, (7.5945f /1000) +120.0/1000, -0.016835016835);
-inline auto airgap5 = Airgap<8>(adc_airgap_5, (7.3815 /1000) + 122.5/1000, -0.0175438596491f);
+inline auto airgap2 = Airgap<8>(adc_airgap_2, 0.07932f, 0.01176f);
+inline auto airgap3 = Airgap<8>(adc_airgap_3, 0.07956f, 0.01126f);
+inline auto airgap4 = Airgap<8>(adc_airgap_4, 0.07941f, 0.01145f);
+inline auto airgap5 = Airgap<8>(adc_airgap_5, 0.07878f, 0.01226f);
 inline auto airgap6 = Airgap<8>(adc_airgap_6, 0.00000f, 1);
 inline auto airgap7 = Airgap<8>(adc_airgap_7, 0.00000f, 1);
 inline auto airgap8 = Airgap<8>(adc_airgap_8, 0.00000f, 1);
 inline auto airgap_array = AirgapArray(
     airgap1, airgap2, airgap3, airgap4, airgap5, airgap6, airgap7, airgap8
 );
+
+
+
+
+// inline auto current_protection4_rules = Protections::bake_rules<float>(
+//     Protections::Rules::range(-60.0f, 60.0f, -60.f, 60.0f).value()
+// );
+
+// using CurrentProtection4 = Protections::ProtectionDeclarationWithRules<
+//     "current_4",
+//     lpu4.shunt_v,
+//     current_protection4_rules
+// >;
+
+// inline auto current_protection6_rules = Protections::bake_rules<float>(
+//     Protections::Rules::range(-60.0f, 60.0f, -60.f, 60.0f).value()
+// );
+
+// using CurrentProtection6 = Protections::ProtectionDeclarationWithRules<
+//     "current_6",
+//     lpu6.shunt_v,
+//     current_protection6_rules
+// >;
+
+// inline auto current_protection8_rules = Protections::bake_rules<float>(
+//     Protections::Rules::range(-60.0f, 60.0f, -60.f, 60.0f).value()
+// );
+
+// using CurrentProtection8 = Protections::ProtectionDeclarationWithRules<
+//     "current_8",
+//     lpu8.shunt_v,
+//     current_protection8_rules
+// >;
+
+// inline auto current_protection10_rules = Protections::bake_rules<float>(
+//     Protections::Rules::range(-60.0f, 60.0f, -60.f, 60.0f).value()
+// );
+
+// using CurrentProtection10 = Protections::ProtectionDeclarationWithRules<
+//     "current_10",
+//     lpu10.shunt_v,
+//     current_protection10_rules
+// >;
+
+// using AppProtectionEngine = Protections::ProtectionEngine<
+//     CurrentProtection4,
+//     CurrentProtection6,
+//     CurrentProtection8,
+//     CurrentProtection10
+// >;
+
+using AppProtectionEngine = Protections::ProtectionEngine<>;
+
 #endif
 
 } // namespace LCU_Slave

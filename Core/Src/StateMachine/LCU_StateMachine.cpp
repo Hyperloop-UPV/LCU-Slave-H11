@@ -112,10 +112,15 @@ void cyclic_levitate_control_current() {
     
 #elif defined(USE_5_DOF)
     // 5-DOF: Apply to all 10 LPUs as specified in bitmask
-    if (apply_to_all_for_levitation || (current_mask & (1 << 3))) { LCU_Slave::lpu_array.get_lpu<9>().set_out_voltage(control_output.voltages[0]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 5))) { LCU_Slave::lpu_array.get_lpu<3>().set_out_voltage(control_output.voltages[1]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 9))) { LCU_Slave::lpu_array.get_lpu<9>().set_out_voltage(control_output.voltages[0]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 3))) { LCU_Slave::lpu_array.get_lpu<3>().set_out_voltage(control_output.voltages[1]); }
     if (apply_to_all_for_levitation || (current_mask & (1 << 7))) { LCU_Slave::lpu_array.get_lpu<7>().set_out_voltage(control_output.voltages[2]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 9))) { LCU_Slave::lpu_array.get_lpu<5>().set_out_voltage(control_output.voltages[3]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 5))) { LCU_Slave::lpu_array.get_lpu<5>().set_out_voltage(control_output.voltages[3]); }
+
+    status_packet->desired_current1 = control_DW.Corriente_Buffer0[0];
+    status_packet->desired_current2 = control_DW.Corriente_Buffer0[1];
+    status_packet->desired_current3 = control_DW.Corriente_Buffer0[2];
+    status_packet->desired_current4 = control_DW.Corriente_Buffer0[3];
 #endif
 }
 
@@ -141,6 +146,8 @@ void update() {
     if (request_global_fault_if_needed()) {
         return;
     }
+
+    status_packet->slave_state = sm_operational.get_current_state();
 
     // General commands
     auto cmds = command_packet->flags;
