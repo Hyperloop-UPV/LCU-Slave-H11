@@ -54,16 +54,16 @@ public:
      * @brief Set the duty cycle based on the desired output voltage and the current battery voltage
      */
     bool set_out_voltage(float voltage) {
-        if (voltage > 80.0f) {
-            voltage = 80.0f;
-        } else if (voltage < -80.0f) {
-            voltage = -80.0f;
-        }
+        // if (voltage > 80.0f) {
+        //     voltage = 80.0f;
+        // } else if (voltage < -80.0f) {
+        //     voltage = -80.0f;
+        // }
         if (is_fixed_duty_cycle) {
             return true;
         }
         // Avoid division by zero, but this shouldn't happen I think?
-        if (vbat_v < 0.1f) {
+        if (vbat_v < 5.0f) {
             set_duty(0.0f);
             return false;
         }
@@ -75,10 +75,10 @@ public:
     }
 
     void set_duty(float duty) {
-        if (abs(duty) > 30.0f) {
-            PANIC("Duty cycle too high");
-            duty = 0.0f;
-        }
+        // if (abs(duty) > 30.0f) {
+        //     PANIC("Duty cycle too high");
+        //     duty = 0.0f;
+        // }
         if (duty >= 0.0f) {
             pwm_negative.set_duty_cycle(0.0f);
             pwm_positive.set_duty_cycle(duty);
