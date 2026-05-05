@@ -80,15 +80,15 @@ void on_levitate_exit() {
     LCU_Slave::lpu_array.disable_all();
 }
 
-void cyclic_levitate_sensors() {
-    LCU_Slave::airgap_array.update();
-    LCU_Slave::lpu_array.update_all();
-}
+// void cyclic_levitate_sensors() {
+//     LCU_Slave::airgap_array.update();
+//     LCU_Slave::lpu_array.update_all();
+// }
 
-void cyclic_idle_sensors() {
-    LCU_Slave::airgap_array.update();
-    LCU_Slave::lpu_array.update_all();
-}
+// void cyclic_idle_sensors() {
+//     LCU_Slave::airgap_array.update();
+//     LCU_Slave::lpu_array.update_all();
+// }
 
 void update_sensors() {
     LCU_Slave::airgap_array.update();
@@ -112,15 +112,13 @@ void cyclic_levitate_control_current() {
     
 #elif defined(USE_5_DOF)
     // 5-DOF: Apply to all 10 LPUs as specified in bitmask
-    if (apply_to_all_for_levitation || (current_mask & (1 << 9))) { LCU_Slave::lpu_array.get_lpu<9>().set_out_voltage(control_output.voltages[0]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 3))) { LCU_Slave::lpu_array.get_lpu<3>().set_out_voltage(control_output.voltages[1]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 7))) { LCU_Slave::lpu_array.get_lpu<7>().set_out_voltage(control_output.voltages[2]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 5))) { LCU_Slave::lpu_array.get_lpu<5>().set_out_voltage(control_output.voltages[3]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 9))) { LCU_Slave::lpu_array.get_lpu<9>().set_out_voltage(control_output.voltages[1]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 3))) { LCU_Slave::lpu_array.get_lpu<3>().set_out_voltage(control_output.voltages[0]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 7))) { LCU_Slave::lpu_array.get_lpu<7>().set_out_voltage(control_output.voltages[3]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 5))) { LCU_Slave::lpu_array.get_lpu<5>().set_out_voltage(control_output.voltages[2]); }
 
-    status_packet->desired_current1 = control_DW.Corriente_Buffer0[0];
-    status_packet->desired_current2 = control_DW.Corriente_Buffer0[1];
-    status_packet->desired_current3 = control_DW.Corriente_Buffer0[2];
-    status_packet->desired_current4 = control_DW.Corriente_Buffer0[3];
+    // Note: CorrienteManual from CONTROLH10_1 is not exposed back to status packet in new interface
+    // status_packet->desired_current1/2/3/4 would need to be set from control class getters if needed
 #endif
 }
 

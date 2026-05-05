@@ -3,22 +3,11 @@
 
 #include "C++Utilities/CppImports.hpp"
 
-// #ifdef USE_1_DOF
-extern "C" {
-#include "control.h"
-}
-// #endif
-
-// #ifdef USE_5_DOF
-// #include "control.h"
-// #endif
+#ifdef USE_5_DOF
+#include "CONTROLH10_1.h"
+#endif
 
 namespace Control {
-
-#ifdef USE_5_DOF
-// inline C_5DOF_EL control{};
-// inline C_5DOF_EL::ExtU_C_5DOF_EL_T inputs{};
-#endif
 
 struct ControlOutput {
 #ifdef USE_1_DOF
@@ -29,13 +18,7 @@ struct ControlOutput {
 #endif
 };
 
-inline void init() {
-#ifdef USE_1_DOF
-    control_initialize();
-#elif defined(USE_5_DOF)
-    control_initialize();
-#endif
-}
+void init();
 
 ControlOutput current_update(std::optional<float> desired_current = std::nullopt);
 
@@ -45,7 +28,7 @@ inline void deinit() {
 #ifdef USE_1_DOF
     control_terminate();
 #elif defined(USE_5_DOF)
-    control_terminate();
+    // 5DOF control terminates via static instance destructor
 #endif
 }
 

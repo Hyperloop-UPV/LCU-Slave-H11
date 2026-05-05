@@ -75,6 +75,10 @@ public:
     }
 
     void set_duty(float duty) {
+        if (abs(duty) > 30.0f) {
+            PANIC("Duty cycle too high");
+            duty = 0.0f;
+        }
         if (duty >= 0.0f) {
             pwm_negative.set_duty_cycle(0.0f);
             pwm_positive.set_duty_cycle(duty);

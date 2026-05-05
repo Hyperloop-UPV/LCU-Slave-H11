@@ -453,10 +453,14 @@ inline auto lpu_array = LpuArray(
     std::tie(en_buff_1, en_buff_2, en_buff_3, en_buff_4, en_buff_5)
 );
 inline auto airgap1 = Airgap<8>(adc_airgap_1, 0.00000f, 1);
-inline auto airgap2 = Airgap<8>(adc_airgap_2, 0.07932f, 0.01176f);
-inline auto airgap3 = Airgap<8>(adc_airgap_3, 0.07956f, 0.01126f);
-inline auto airgap4 = Airgap<8>(adc_airgap_4, 0.07941f, 0.01145f);
-inline auto airgap5 = Airgap<8>(adc_airgap_5, 0.07878f, 0.01226f);
+inline auto airgap2 = Airgap<8>(adc_airgap_2, 0.07934f, 0.01159f);
+inline auto airgap3 = Airgap<8>(adc_airgap_3, 0.07937f, 0.01155f);
+inline auto airgap4 = Airgap<8>(adc_airgap_4, 0.07928f, 0.01175f);
+inline auto airgap5 = Airgap<8>(adc_airgap_5, 0.07926f, 0.01158f);
+// inline auto airgap2 = Airgap<8>(adc_airgap_2, 0.0f, 1.0f);
+// inline auto airgap3 = Airgap<8>(adc_airgap_3, 0.0f, 1.0f);
+// inline auto airgap4 = Airgap<8>(adc_airgap_4, 0.0f, 1.0f);
+// inline auto airgap5 = Airgap<8>(adc_airgap_5, 0.0f, 1.0f);
 inline auto airgap6 = Airgap<8>(adc_airgap_6, 0.00000f, 1);
 inline auto airgap7 = Airgap<8>(adc_airgap_7, 0.00000f, 1);
 inline auto airgap8 = Airgap<8>(adc_airgap_8, 0.00000f, 1);

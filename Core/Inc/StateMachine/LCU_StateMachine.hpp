@@ -44,10 +44,10 @@ void on_fault_enter();
 void on_levitate_enter();
 void on_levitate_exit();
 
-void cyclic_levitate_sensors();
+// void cyclic_levitate_sensors();
 void cyclic_levitate_control_current();
 void cyclic_levitate_control_distance();
-void cyclic_idle_sensors();
+// void cyclic_idle_sensors();
 
 /**
  * State Machine definition
