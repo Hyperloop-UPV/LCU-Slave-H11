@@ -80,16 +80,6 @@ void on_levitate_exit() {
     LCU_Slave::lpu_array.disable_all();
 }
 
-// void cyclic_levitate_sensors() {
-//     LCU_Slave::airgap_array.update();
-//     LCU_Slave::lpu_array.update_all();
-// }
-
-// void cyclic_idle_sensors() {
-//     LCU_Slave::airgap_array.update();
-//     LCU_Slave::lpu_array.update_all();
-// }
-
 void update_sensors() {
     LCU_Slave::airgap_array.update();
     LCU_Slave::lpu_array.update_all();
@@ -99,6 +89,10 @@ void cyclic_levitate_control_current() {
     bool levitate_active = bool(command_packet->flags & CommandFlags::LEVITATE);
     bool direct_current_control = bool(command_packet->flags & CommandFlags::CURRENT_CONTROL);
     auto control_output = Control::current_update(
+        {LCU_Slave::lpu_array.get_lpu<0>().shunt_v,
+         LCU_Slave::lpu_array.get_lpu<1>().shunt_v,
+         LCU_Slave::lpu_array.get_lpu<2>().shunt_v,
+         LCU_Slave::lpu_array.get_lpu<3>().shunt_v},
         direct_current_control ? std::optional<float>(command_packet->current_control.desired_current) : std::nullopt
     );
     uint16_t current_mask = command_packet->current_control.lpu_id_bitmask;
@@ -112,13 +106,27 @@ void cyclic_levitate_control_current() {
     
 #elif defined(USE_5_DOF)
     // 5-DOF: Apply to all 10 LPUs as specified in bitmask
-    if (apply_to_all_for_levitation || (current_mask & (1 << 9))) { LCU_Slave::lpu_array.get_lpu<9>().set_out_voltage(control_output.voltages[1]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 3))) { LCU_Slave::lpu_array.get_lpu<3>().set_out_voltage(control_output.voltages[0]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 7))) { LCU_Slave::lpu_array.get_lpu<7>().set_out_voltage(control_output.voltages[3]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 5))) { LCU_Slave::lpu_array.get_lpu<5>().set_out_voltage(control_output.voltages[2]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 0))) { LCU_Slave::lpu_array.get_lpu<0>().set_out_voltage(control_output[0]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 1))) { LCU_Slave::lpu_array.get_lpu<1>().set_out_voltage(control_output[1]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 2))) { LCU_Slave::lpu_array.get_lpu<2>().set_out_voltage(control_output[2]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 3))) { LCU_Slave::lpu_array.get_lpu<3>().set_out_voltage(control_output[3]); }
 
-    // Note: CorrienteManual from CONTROLH10_1 is not exposed back to status packet in new interface
-    // status_packet->desired_current1/2/3/4 would need to be set from control class getters if needed
+    status_packet->desired_current1 = Control::output.CorrienteReferencia[0];
+    status_packet->desired_current2 = Control::output.CorrienteReferencia[1];
+    status_packet->desired_current3 = Control::output.CorrienteReferencia[2];
+    status_packet->desired_current4 = Control::output.CorrienteReferencia[3];
+
+    status_packet->state0 = Control::output.Estados[0];
+    status_packet->state1 = Control::output.Estados[1];
+    status_packet->state2 = Control::output.Estados[2];
+    status_packet->state3 = Control::output.Estados[3];
+    status_packet->state4 = Control::output.Estados[4];
+
+    status_packet->airgap_local_1 = Control::output.GapsLocales[0];
+    status_packet->airgap_local_2 = Control::output.GapsLocales[1];
+    status_packet->airgap_local_3 = Control::output.GapsLocales[2];
+    status_packet->airgap_local_4 = Control::output.GapsLocales[3];
+
 #endif
 }
 
@@ -127,6 +135,10 @@ void cyclic_levitate_control_distance() {
     bool direct_current_control = bool(command_packet->flags & CommandFlags::CURRENT_CONTROL);
     if (levitate_active && !direct_current_control) {
         Control::levitation_update(
+            {LCU_Slave::airgap_array.get_airgap<0>().airgap_v,
+             LCU_Slave::airgap_array.get_airgap<1>().airgap_v,
+             LCU_Slave::airgap_array.get_airgap<2>().airgap_v,
+             LCU_Slave::airgap_array.get_airgap<3>().airgap_v},
             command_packet->levitate.desired_distance
         );
     }

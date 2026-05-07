@@ -63,7 +63,7 @@ void update() {
         HAL_NVIC_SystemReset();
     }
 
-    if (abs(lpu4.shunt_v) > 60.0f || abs(lpu6.shunt_v) > 60.0f || abs(lpu8.shunt_v) > 60.0f || abs(lpu10.shunt_v) > 60.0f) {
+    if (abs(lpu1.shunt_v) > 60.0f || abs(lpu2.shunt_v) > 60.0f || abs(lpu3.shunt_v) > 60.0f || abs(lpu4.shunt_v) > 60.0f) {
         PANIC("Overcurrent detected");
     }
 }

@@ -2,35 +2,28 @@
 #define CONTROL_HPP
 
 #include "C++Utilities/CppImports.hpp"
+#include "ControlTop/ControlTop.h"
 
-#ifdef USE_5_DOF
-#include "CONTROLH10_1.h"
+#ifdef USE_1_DOF
+    #define CONTROL_LPU_COUNT 1
+    #define CONTROL_AIRGAP_COUNT 1
+#elif defined(USE_5_DOF) // Manually overriden as 3dof right now
+    #define CONTROL_LPU_COUNT 4
+    #define CONTROL_AIRGAP_COUNT 4
 #endif
 
 namespace Control {
 
-struct ControlOutput {
-#ifdef USE_1_DOF
-    float voltage;
-    float z1, z2, z3;
-#elif defined(USE_5_DOF)
-    std::array<float, 4> voltages;
-#endif
-};
+inline ControlTop model{};
+inline auto& output = model.getExternalOutputs();
+inline ControlTop::ExtU_ControlTop_T inputs{};
 
 void init();
+void deinit();
 
-ControlOutput current_update(std::optional<float> desired_current = std::nullopt);
+std::array<float, CONTROL_LPU_COUNT> current_update(std::array<float, CONTROL_LPU_COUNT> input_currents, std::optional<float> desired_current = std::nullopt);
 
-void levitation_update(float reference);
-
-inline void deinit() {
-#ifdef USE_1_DOF
-    control_terminate();
-#elif defined(USE_5_DOF)
-    // 5DOF control terminates via static instance destructor
-#endif
-}
+void levitation_update(std::array<float, CONTROL_AIRGAP_COUNT> input_airgaps, float reference);
 
 }; // namespace Control
 

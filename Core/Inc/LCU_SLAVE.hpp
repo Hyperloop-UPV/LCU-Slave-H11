@@ -388,29 +388,30 @@ inline constexpr auto& adc_airgap_6 = Board::instance_of<adc_airgap_6_req>();
 inline constexpr auto& adc_airgap_7 = Board::instance_of<adc_airgap_7_req>();
 inline constexpr auto& adc_airgap_8 = Board::instance_of<adc_airgap_8_req>();
 
-inline auto lpu1 = make_lpu<5, 1>(
+inline auto lpu10 = make_lpu<5, 1>(
     pwm_positive_1, pwm_negative_1,
     adc_vbat_1, adc_shunt_1,
     0.0f, 1.0f,
     0.0f, 1.0f
 );
-inline auto lpu2 = make_lpu<5, 1>(
+inline auto lpu6 = make_lpu<5, 1>(
     pwm_positive_2, pwm_negative_2,
     adc_vbat_2, adc_shunt_2,
     0.0f, 1.0f,
     0.0f, 1.0f
 );
-inline auto lpu3 = make_lpu<5, 1>(
+inline auto lpu8 = make_lpu<5, 1>(
     pwm_positive_3, pwm_negative_3,
     adc_vbat_3, adc_shunt_3,
     0.0f, 1.0f,
     0.0f, 1.0f
 );
-inline auto lpu4 = make_lpu<5, 1>(
+inline auto lpu2 = make_lpu<5, 1>(
     pwm_positive_4, pwm_negative_4,
     adc_vbat_4, adc_shunt_4,
     0.0f, 1.0f,
-    310.3f, -181.0f // Characterized for LPU2
+    // 310.3f, -181.0f // Characterized for LPU2
+    326.1f, -190.3f // Characterized for LPU3
 );
 inline auto lpu5 = make_lpu<5, 1>(
     pwm_positive_5, pwm_negative_5,
@@ -418,7 +419,7 @@ inline auto lpu5 = make_lpu<5, 1>(
     0.0f, 1.0f,
     0.0f, 1.0f
 );
-inline auto lpu6 = make_lpu<5, 1>(
+inline auto lpu4 = make_lpu<5, 1>(
     pwm_positive_6, pwm_negative_6,
     adc_vbat_6, adc_shunt_6,
     0.0f, 1.0f,
@@ -430,7 +431,7 @@ inline auto lpu7 = make_lpu<5, 1>(
     0.0f, 1.0f,
     0.0f, 1.0f
 );
-inline auto lpu8 = make_lpu<5, 1>(
+inline auto lpu3 = make_lpu<5, 1>(
     pwm_positive_8, pwm_negative_8,
     adc_vbat_8, adc_shunt_8,
     0.0f, 1.0f,
@@ -442,7 +443,7 @@ inline auto lpu9 = make_lpu<5, 1>(
     0.0f, 1.0f,
     0.0f, 1.0f
 );
-inline auto lpu10 = make_lpu<5, 1>(
+inline auto lpu1 = make_lpu<5, 1>(
     pwm_positive_10, pwm_negative_10,
     adc_vbat_10, adc_shunt_10,
     0.0f, 1.0f,
@@ -452,11 +453,11 @@ inline auto lpu_array = LpuArray(
     std::tie(lpu1, lpu2, lpu3, lpu4, lpu5, lpu6, lpu7, lpu8, lpu9, lpu10),
     std::tie(en_buff_1, en_buff_2, en_buff_3, en_buff_4, en_buff_5)
 );
-inline auto airgap1 = Airgap<8>(adc_airgap_1, 0.00000f, 1);
-inline auto airgap2 = Airgap<8>(adc_airgap_2, 0.07934f, 0.01159f);
-inline auto airgap3 = Airgap<8>(adc_airgap_3, 0.07937f, 0.01155f);
-inline auto airgap4 = Airgap<8>(adc_airgap_4, 0.07928f, 0.01175f);
-inline auto airgap5 = Airgap<8>(adc_airgap_5, 0.07926f, 0.01158f);
+inline auto airgap5 = Airgap<8>(adc_airgap_1, 0.00000f, 1);
+inline auto airgap1 = Airgap<8>(adc_airgap_2, 0.07934f + 0.0023, 0.01159f);
+inline auto airgap4 = Airgap<8>(adc_airgap_3, 0.07937f + 0.0016, 0.01155f);
+inline auto airgap3 = Airgap<8>(adc_airgap_4, 0.07928f + 0.0016, 0.01175f);
+inline auto airgap2 = Airgap<8>(adc_airgap_5, 0.07926f + 0.0023, 0.01158f);
 // inline auto airgap2 = Airgap<8>(adc_airgap_2, 0.0f, 1.0f);
 // inline auto airgap3 = Airgap<8>(adc_airgap_3, 0.0f, 1.0f);
 // inline auto airgap4 = Airgap<8>(adc_airgap_4, 0.0f, 1.0f);

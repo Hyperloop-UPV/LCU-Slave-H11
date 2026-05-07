@@ -67,8 +67,8 @@ file(GLOB_RECURSE SOURCE_H    ${CMAKE_SOURCE_DIR}/Core/*.h)
 file(GLOB_RECURSE SOURCE_HPP  ${CMAKE_SOURCE_DIR}/Core/*.hpp)
 
 # Add Simulink-generated control code
-file(GLOB CONTROL_C ${CONTROL_DIR}/*.c ${CONTROL_DIR}/*.cpp)
-file(GLOB CONTROL_H ${CONTROL_DIR}/*.h)
+file(GLOB CONTROL_C ${CONTROL_DIR}/*.c ${CONTROL_DIR}/*.cpp ${CONTROL_DIR}/**/*.c ${CONTROL_DIR}/**/*.cpp)
+file(GLOB CONTROL_H ${CONTROL_DIR}/*.h ${CONTROL_DIR}/**/*.h)
 
 file(GLOB_RECURSE GENERATOR_JSONS
   CONFIGURE_DEPENDS

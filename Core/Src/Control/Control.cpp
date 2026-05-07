@@ -3,80 +3,55 @@
 
 namespace Control {
 
-// 5DOF control instance (CONTROLH10_1 class-based interface)
-#ifdef USE_5_DOF
-static CONTROLH10_1 control_5dof;
-CONTROLH10_1::ExtU_CONTROLH10_1_T inputs{};
-#endif
-
 void init() {
+    model.initialize();
 }
 
-ControlOutput current_update(std::optional<float> desired_current) {
-#ifdef USE_1_DOF
-    control_U.corriente_real = LCU_Slave::lpu_array.get_lpu<0>().shunt_v;
+void deinit() {
+    model.terminate();
+}
 
-    if (desired_current.has_value()) {
-        // CURRENT_CONTROL mode: bypass outer loop and inject current setpoint directly.
-        control_DW.RateTransition_Buffer0 = desired_current.value();
+std::array<float, CONTROL_LPU_COUNT> current_update(std::array<float, CONTROL_LPU_COUNT> input_currents, std::optional<float> desired_current) {
+    
+    for (size_t i = 0; i < CONTROL_LPU_COUNT; i++) {
+        inputs.I_HEMS[i] = input_currents[i];
     }
 
-    control_step0();
-
-    return ControlOutput{control_Y.Voltage, control_Y.z1, control_Y.z2, control_Y.z3};
-
-#elif defined(USE_5_DOF)
-    // 5DOF: Step the fast control loop with new class-based interface
-    
-    // Map current sensors (I_HEMS indices)
-    inputs.I_HEMS[0] = LCU_Slave::lpu_array.get_lpu<3>().shunt_v;
-    inputs.I_HEMS[1] = LCU_Slave::lpu_array.get_lpu<9>().shunt_v;
-    inputs.I_HEMS[2] = LCU_Slave::lpu_array.get_lpu<5>().shunt_v;
-    inputs.I_HEMS[3] = LCU_Slave::lpu_array.get_lpu<7>().shunt_v;
-
     if (desired_current.has_value()) {
-        // Manual current control - set all hems to desired value (if supported)
         inputs.CorrienteManual = desired_current.value();
+        inputs.ManualLevitacin = 0.0; // Disable levitation control, enable manual current control
     }
-    control_5dof.setExternalInputs(&inputs);
+
+    model.setExternalInputs(&inputs);
  
-    control_5dof.step0();
+    model.step0();
+
+    std::array<float, CONTROL_LPU_COUNT> output_currents{};
+    for (size_t i = 0; i < CONTROL_LPU_COUNT; i++) {
+        output_currents[i] = static_cast<float>(output.Voltages[i]);
+    }
     
-    const auto& outputs = control_5dof.getExternalOutputs();
-    return ControlOutput{static_cast<float>(outputs.V[0]), static_cast<float>(outputs.V[1]), 
-                         static_cast<float>(outputs.V[2]), static_cast<float>(outputs.V[3])};
-#endif
+    return output_currents;
 }
 
-void levitation_update(float reference) {
-#ifdef USE_1_DOF
-    control_U.Gap = LCU_Slave::airgap_array.get_airgap<0>().airgap_v;
-    control_U.Referencia = reference;
+void levitation_update(std::array<float, CONTROL_AIRGAP_COUNT> input_airgaps, float reference) {
 
-    control_step1();
+    for (size_t i = 0; i < CONTROL_AIRGAP_COUNT; i++) {
+        inputs.Sensores[i] = input_airgaps[i];
+    }
 
-#elif defined(USE_5_DOF)
-    // 5DOF: Collect airgap sensor values and update levitation reference
-    
+    // inputs.Sensores[0] = LCU_Slave::airgap_array.get_airgap<4>().airgap_v;
+    // inputs.Sensores[1] = LCU_Slave::airgap_array.get_airgap<1>().airgap_v;
+    // inputs.Sensores[2] = LCU_Slave::airgap_array.get_airgap<2>().airgap_v;
+    // inputs.Sensores[3] = LCU_Slave::airgap_array.get_airgap<3>().airgap_v;
+
     inputs.RefZ = reference;
-    
-    // Map airgap sensors (Sensores array, 0-indexed)
-    // Physical airgaps 1, 4, 3, 2 map to Sensores indices as needed
-    inputs.Sensores[0] = LCU_Slave::airgap_array.get_airgap<4>().airgap_v;
-    inputs.Sensores[1] = LCU_Slave::airgap_array.get_airgap<1>().airgap_v;
-    inputs.Sensores[2] = LCU_Slave::airgap_array.get_airgap<2>().airgap_v;
-    inputs.Sensores[3] = LCU_Slave::airgap_array.get_airgap<3>().airgap_v;
-    // Additional sensors if used
-    inputs.Sensores[4] = 0.0; // unused
-    inputs.Sensores[5] = 0.0; // unused
-    inputs.Sensores[6] = 0.0; // unused
-    inputs.Sensores[7] = 0.0; // unused
-    
     inputs.ManualLevitacin = 1.0; // Enable levitation control
-    control_5dof.setExternalInputs(&inputs);
+    inputs.CorrienteManual = 0.0; // Disable manual current control
     
-    control_5dof.step1();
-#endif
+    model.setExternalInputs(&inputs);
+    
+    model.step1();
 }
 
 } // Namespace Control
