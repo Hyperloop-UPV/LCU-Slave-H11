@@ -23,7 +23,7 @@ void deinit();
 
 std::array<float, CONTROL_LPU_COUNT> current_update(std::array<float, CONTROL_LPU_COUNT> input_currents, std::optional<float> desired_current = std::nullopt);
 
-void levitation_update(std::array<float, CONTROL_AIRGAP_COUNT> input_airgaps, float reference);
+void levitation_update(std::array<float, CONTROL_AIRGAP_COUNT> input_airgaps, float reference, bool ramping = false);
 
 }; // namespace Control
 

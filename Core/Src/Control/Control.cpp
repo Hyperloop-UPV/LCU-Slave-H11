@@ -34,20 +34,17 @@ std::array<float, CONTROL_LPU_COUNT> current_update(std::array<float, CONTROL_LP
     return output_currents;
 }
 
-void levitation_update(std::array<float, CONTROL_AIRGAP_COUNT> input_airgaps, float reference) {
+void levitation_update(std::array<float, CONTROL_AIRGAP_COUNT> input_airgaps, float reference, bool ramping) {
 
     for (size_t i = 0; i < CONTROL_AIRGAP_COUNT; i++) {
         inputs.Sensores[i] = input_airgaps[i];
     }
 
-    // inputs.Sensores[0] = LCU_Slave::airgap_array.get_airgap<4>().airgap_v;
-    // inputs.Sensores[1] = LCU_Slave::airgap_array.get_airgap<1>().airgap_v;
-    // inputs.Sensores[2] = LCU_Slave::airgap_array.get_airgap<2>().airgap_v;
-    // inputs.Sensores[3] = LCU_Slave::airgap_array.get_airgap<3>().airgap_v;
-
     inputs.RefZ = reference;
     inputs.ManualLevitacin = 1.0; // Enable levitation control
     inputs.CorrienteManual = 0.0; // Disable manual current control
+    inputs.RampaStep = ramping ? 1.0 : 0.0; // Set ramping flag
+    inputs.enable = ramping ? 1.0 : 0.0; // Enable ramping if requested
     
     model.setExternalInputs(&inputs);
     
