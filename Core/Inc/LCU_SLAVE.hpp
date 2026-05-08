@@ -57,11 +57,8 @@ inline constexpr auto pwm_negative = ST_LIB::TimerPin(
     {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm1_2, .channel = Pinout::pwm1_channel_2}
 );
 
-inline constexpr auto timer = ST_LIB::TimerDomain::Timer(
-    {.request = Pinout::timer15},
-    pwm_positive,
-    pwm_negative
-);
+inline constexpr auto timer =
+    ST_LIB::TimerDomain::Timer({.request = Pinout::timer15}, pwm_positive, pwm_negative);
 
 inline constexpr auto en_buff = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_1);
 
@@ -84,7 +81,6 @@ inline constexpr auto timer15_req = ST_LIB::TimerDomain::Timer(
     pwm_positive_1_req,
     pwm_negative_1_req
 );
-
 
 inline constexpr auto pwm_positive_2_req = ST_LIB::TimerPin(
     {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm2_1, .channel = Pinout::pwm2_channel_1}
@@ -112,11 +108,8 @@ inline constexpr auto pwm_positive_4_req = ST_LIB::TimerPin(
 inline constexpr auto pwm_negative_4_req = ST_LIB::TimerPin(
     {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm4_2, .channel = Pinout::pwm4_channel_2}
 );
-inline constexpr auto timer8_req = ST_LIB::TimerDomain::Timer(
-    {.request = Pinout::timer8},
-    pwm_positive_4_req,
-    pwm_negative_4_req
-);
+inline constexpr auto timer8_req =
+    ST_LIB::TimerDomain::Timer({.request = Pinout::timer8}, pwm_positive_4_req, pwm_negative_4_req);
 
 inline constexpr auto pwm_positive_5_req = ST_LIB::TimerPin(
     {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm5_1, .channel = Pinout::pwm5_channel_1}
@@ -144,14 +137,10 @@ inline constexpr auto pwm_positive_7_req = ST_LIB::TimerPin(
 inline constexpr auto pwm_negative_7_req = ST_LIB::TimerPin(
     {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm7_2, .channel = Pinout::pwm7_channel_2}
 );
-inline constexpr auto timer17_req = ST_LIB::TimerDomain::Timer(
-    {.request = Pinout::timer17},
-    pwm_positive_7_req
-);
-inline constexpr auto timer16_req = ST_LIB::TimerDomain::Timer(
-    {.request = Pinout::timer16},
-    pwm_negative_7_req
-);
+inline constexpr auto timer17_req =
+    ST_LIB::TimerDomain::Timer({.request = Pinout::timer17}, pwm_positive_7_req);
+inline constexpr auto timer16_req =
+    ST_LIB::TimerDomain::Timer({.request = Pinout::timer16}, pwm_negative_7_req);
 
 inline constexpr auto pwm_positive_8_req = ST_LIB::TimerPin(
     {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm8_1, .channel = Pinout::pwm8_channel_1}
@@ -251,8 +240,8 @@ inline constexpr auto adc_airgap_8_req = ST_LIB::ADCDomain::ADC(Pinout::airgap_8
 
 #endif
 
-inline constexpr auto spi_req =
-    ST_LIB::SPIDomain::Device<ST_LIB::DMADomain::Stream::dma1_stream5, ST_LIB::DMADomain::Stream::dma1_stream6>(
+inline constexpr auto spi_req = ST_LIB::SPIDomain::
+    Device<ST_LIB::DMADomain::Stream::dma1_stream5, ST_LIB::DMADomain::Stream::dma1_stream6>(
         ST_LIB::SPIDomain::SPIMode::SLAVE,
         Pinout::spi_peripheral,
         2000000,
@@ -265,23 +254,64 @@ inline constexpr auto slave_ready_req = ST_LIB::DigitalOutputDomain::DigitalOutp
 
 using Frame = SystemFrame<false>; // false for Slave
 
-
-
 using BoardPolicy = ST_LIB::FaultPolicy<LCU_SM::sm_operational, LCU_SM::on_fault_enter>;
 
 using Board = ST_LIB::Board<
     BoardPolicy,
-    led_operational_req, led_fault_req,
-    master_fault_req, slave_fault_req,
-    spi_req, slave_ready_req,
+    led_operational_req,
+    led_fault_req,
+    master_fault_req,
+    slave_fault_req,
+    spi_req,
+    slave_ready_req,
 #ifdef USE_1_DOF
-    timer, en_buff, adc_vbat, adc_shunt, adc_airgap
+    timer,
+    en_buff,
+    adc_vbat,
+    adc_shunt,
+    adc_airgap
 #elif defined(USE_5_DOF)
-    timer15_req, timer3_req, timer8_req, timer4_req, timer17_req, timer16_req, timer12_req, timer1_req,
-    en_buff_1_req, en_buff_2_req, en_buff_3_req, en_buff_4_req, en_buff_5_req,
-    adc_vbat_1_req, adc_vbat_2_req, adc_vbat_3_req, adc_vbat_4_req, adc_vbat_5_req, adc_vbat_6_req, adc_vbat_7_req, adc_vbat_8_req, adc_vbat_9_req, adc_vbat_10_req,
-    adc_shunt_1_req, adc_shunt_2_req, adc_shunt_3_req, adc_shunt_4_req, adc_shunt_5_req, adc_shunt_6_req, adc_shunt_7_req, adc_shunt_8_req, adc_shunt_9_req, adc_shunt_10_req,
-    adc_airgap_1_req, adc_airgap_2_req, adc_airgap_3_req, adc_airgap_4_req, adc_airgap_5_req, adc_airgap_6_req, adc_airgap_7_req, adc_airgap_8_req
+    timer15_req,
+    timer3_req,
+    timer8_req,
+    timer4_req,
+    timer17_req,
+    timer16_req,
+    timer12_req,
+    timer1_req,
+    en_buff_1_req,
+    en_buff_2_req,
+    en_buff_3_req,
+    en_buff_4_req,
+    en_buff_5_req,
+    adc_vbat_1_req,
+    adc_vbat_2_req,
+    adc_vbat_3_req,
+    adc_vbat_4_req,
+    adc_vbat_5_req,
+    adc_vbat_6_req,
+    adc_vbat_7_req,
+    adc_vbat_8_req,
+    adc_vbat_9_req,
+    adc_vbat_10_req,
+    adc_shunt_1_req,
+    adc_shunt_2_req,
+    adc_shunt_3_req,
+    adc_shunt_4_req,
+    adc_shunt_5_req,
+    adc_shunt_6_req,
+    adc_shunt_7_req,
+    adc_shunt_8_req,
+    adc_shunt_9_req,
+    adc_shunt_10_req,
+    adc_airgap_1_req,
+    adc_airgap_2_req,
+    adc_airgap_3_req,
+    adc_airgap_4_req,
+    adc_airgap_5_req,
+    adc_airgap_6_req,
+    adc_airgap_7_req,
+    adc_airgap_8_req
 #endif
     >;
 
@@ -299,13 +329,12 @@ using Board = ST_LIB::Board<
 //         test_protection_rules
 //     >;
 
-
-
 inline constexpr auto& led_operational = Board::instance_of<led_operational_req>();
 inline constexpr auto& led_fault = Board::instance_of<led_fault_req>();
 inline constexpr auto& master_fault = Board::instance_of<master_fault_req>();
 inline constexpr auto& slave_fault = Board::instance_of<slave_fault_req>();
-inline auto spi = ST_LIB::SPIDomain::SPIWrapper<spi_req>(Board::instance_of<spi_req>()); // Should make SPI get instance in compile-time
+inline auto spi = ST_LIB::SPIDomain::SPIWrapper<spi_req>(Board::instance_of<spi_req>()
+); // Should make SPI get instance in compile-time
 inline constexpr auto& slave_ready = Board::instance_of<slave_ready_req>();
 #ifdef USE_1_DOF
 inline auto timer = get_timer_instance(Board, timer_req);
@@ -317,16 +346,21 @@ inline constexpr auto& adc_shunt = Board::instance_of<adc_shunt>();
 inline constexpr auto& adc_airgap = Board::instance_of<adc_airgap>();
 
 inline auto lpu = make_lpu<1, 1>(
-    my_pwm_positive, my_pwm_negative,
-    adc_vbat, adc_shunt,
-    0.0f, 1.0f,
-    344.5f, -197.1f
+    my_pwm_positive,
+    my_pwm_negative,
+    adc_vbat,
+    adc_shunt,
+    0.0f,
+    1.0f,
+    344.5f,
+    -197.1f
 );
 inline auto lpu_array = LpuArrayType(std::tie(lpu), std::tie(en_buff));
 inline auto airgap = Airgap<8>(adc_airgap, 0.00020f, 0.006987);
 inline auto airgap_array = AirgapArray(airgap);
 #elif defined(USE_5_DOF)
-inline auto timer15 = get_timer_instance(Board, timer15_req); // Should get timers get instance in compile-time
+inline auto timer15 =
+    get_timer_instance(Board, timer15_req); // Should get timers get instance in compile-time
 inline auto timer3 = get_timer_instance(Board, timer3_req);
 inline auto timer8 = get_timer_instance(Board, timer8_req);
 inline auto timer4 = get_timer_instance(Board, timer4_req);
@@ -334,7 +368,8 @@ inline auto timer17 = get_timer_instance(Board, timer17_req);
 inline auto timer16 = get_timer_instance(Board, timer16_req);
 inline auto timer12 = get_timer_instance(Board, timer12_req);
 inline auto timer1 = get_timer_instance(Board, timer1_req);
-inline auto pwm_positive_1 = timer15.template get_pwm<pwm_positive_1_req>(); // Should get PWM channels get instance in compile-time
+inline auto pwm_positive_1 = timer15.template get_pwm<pwm_positive_1_req>(
+); // Should get PWM channels get instance in compile-time
 inline auto pwm_negative_1 = timer15.template get_pwm<pwm_negative_1_req>();
 inline auto pwm_positive_2 = timer3.template get_pwm<pwm_positive_2_req>();
 inline auto pwm_negative_2 = timer3.template get_pwm<pwm_negative_2_req>();
@@ -388,66 +423,58 @@ inline constexpr auto& adc_airgap_6 = Board::instance_of<adc_airgap_6_req>();
 inline constexpr auto& adc_airgap_7 = Board::instance_of<adc_airgap_7_req>();
 inline constexpr auto& adc_airgap_8 = Board::instance_of<adc_airgap_8_req>();
 
-inline auto lpu10 = make_lpu<2, 1>(
-    pwm_positive_1, pwm_negative_1,
-    adc_vbat_1, adc_shunt_1,
-    0.0f, 1.0f,
-    0.0f, 1.0f
-);
-inline auto lpu6 = make_lpu<2, 1>(
-    pwm_positive_2, pwm_negative_2,
-    adc_vbat_2, adc_shunt_2,
-    0.0f, 1.0f,
-    0.0f, 1.0f
-);
-inline auto lpu8 = make_lpu<2, 1>(
-    pwm_positive_3, pwm_negative_3,
-    adc_vbat_3, adc_shunt_3,
-    0.0f, 1.0f,
-    0.0f, 1.0f
-);
+inline auto lpu10 =
+    make_lpu<2, 1>(pwm_positive_1, pwm_negative_1, adc_vbat_1, adc_shunt_1, 0.0f, 1.0f, 0.0f, 1.0f);
+inline auto lpu6 =
+    make_lpu<2, 1>(pwm_positive_2, pwm_negative_2, adc_vbat_2, adc_shunt_2, 0.0f, 1.0f, 0.0f, 1.0f);
+inline auto lpu8 =
+    make_lpu<2, 1>(pwm_positive_3, pwm_negative_3, adc_vbat_3, adc_shunt_3, 0.0f, 1.0f, 0.0f, 1.0f);
 inline auto lpu2 = make_lpu<2, 1>(
-    pwm_positive_4, pwm_negative_4,
-    adc_vbat_4, adc_shunt_4,
-    0.0f, 1.0f,
+    pwm_positive_4,
+    pwm_negative_4,
+    adc_vbat_4,
+    adc_shunt_4,
+    0.0f,
+    1.0f,
     // 310.3f, -181.0f // Characterized for LPU2
-    304.1f, -177.5f // Characterized for LPU3
+    304.1f,
+    -177.5f // Characterized for LPU3
 );
-inline auto lpu5 = make_lpu<2, 1>(
-    pwm_positive_5, pwm_negative_5,
-    adc_vbat_5, adc_shunt_5,
-    0.0f, 1.0f,
-    0.0f, 1.0f
-);
+inline auto lpu5 =
+    make_lpu<2, 1>(pwm_positive_5, pwm_negative_5, adc_vbat_5, adc_shunt_5, 0.0f, 1.0f, 0.0f, 1.0f);
 inline auto lpu4 = make_lpu<2, 1>(
-    pwm_positive_6, pwm_negative_6,
-    adc_vbat_6, adc_shunt_6,
-    0.0f, 1.0f,
-    317.0f, -184.8f // Characterized for LPU7
+    pwm_positive_6,
+    pwm_negative_6,
+    adc_vbat_6,
+    adc_shunt_6,
+    0.0f,
+    1.0f,
+    317.0f,
+    -184.8f // Characterized for LPU7
 );
-inline auto lpu7 = make_lpu<2, 1>(
-    pwm_positive_7, pwm_negative_7,
-    adc_vbat_7, adc_shunt_7,
-    0.0f, 1.0f,
-    0.0f, 1.0f
-);
+inline auto lpu7 =
+    make_lpu<2, 1>(pwm_positive_7, pwm_negative_7, adc_vbat_7, adc_shunt_7, 0.0f, 1.0f, 0.0f, 1.0f);
 inline auto lpu3 = make_lpu<2, 1>(
-    pwm_positive_8, pwm_negative_8,
-    adc_vbat_8, adc_shunt_8,
-    0.0f, 1.0f,
-    329.0f, -193.4f // Characterized for LPU4
+    pwm_positive_8,
+    pwm_negative_8,
+    adc_vbat_8,
+    adc_shunt_8,
+    0.0f,
+    1.0f,
+    329.0f,
+    -193.4f // Characterized for LPU4
 );
-inline auto lpu9 = make_lpu<2, 1>(
-    pwm_positive_9, pwm_negative_9,
-    adc_vbat_9, adc_shunt_9,
-    0.0f, 1.0f,
-    0.0f, 1.0f
-);
+inline auto lpu9 =
+    make_lpu<2, 1>(pwm_positive_9, pwm_negative_9, adc_vbat_9, adc_shunt_9, 0.0f, 1.0f, 0.0f, 1.0f);
 inline auto lpu1 = make_lpu<2, 1>(
-    pwm_positive_10, pwm_negative_10,
-    adc_vbat_10, adc_shunt_10,
-    0.0f, 1.0f,
-    317.0f, -185.1f // Characterized for LPU1
+    pwm_positive_10,
+    pwm_negative_10,
+    adc_vbat_10,
+    adc_shunt_10,
+    0.0f,
+    1.0f,
+    317.0f,
+    -185.1f // Characterized for LPU1
 );
 inline auto lpu_array = LpuArray(
     std::tie(lpu1, lpu2, lpu3, lpu4, lpu5, lpu6, lpu7, lpu8, lpu9, lpu10),
@@ -465,12 +492,8 @@ inline auto airgap2 = Airgap<8>(adc_airgap_5, 0.07926f + 0.0023 - 0.0075f - 0.00
 inline auto airgap6 = Airgap<8>(adc_airgap_6, 0.00000f, 1);
 inline auto airgap7 = Airgap<8>(adc_airgap_7, 0.00000f, 1);
 inline auto airgap8 = Airgap<8>(adc_airgap_8, 0.00000f, 1);
-inline auto airgap_array = AirgapArray(
-    airgap1, airgap2, airgap3, airgap4, airgap5, airgap6, airgap7, airgap8
-);
-
-
-
+inline auto airgap_array =
+    AirgapArray(airgap1, airgap2, airgap3, airgap4, airgap5, airgap6, airgap7, airgap8);
 
 // inline auto current_protection4_rules = Protections::bake_rules<float>(
 //     Protections::Rules::range(-60.0f, 60.0f, -60.f, 60.0f).value()

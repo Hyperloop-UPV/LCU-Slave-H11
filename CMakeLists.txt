@@ -5,10 +5,6 @@ include(CTest)
 enable_testing()
 
 set(EXECUTABLE ${PROJECT_NAME}.elf)
-set(BOARD_NAME "TEST" CACHE STRING "Board key from Core/Inc/Code_generation/JSON_ADE/boards.json")
-if(BOARD_NAME STREQUAL "")
-  message(FATAL_ERROR "BOARD_NAME cannot be empty")
-endif()
 set(STLIB_DIR ${CMAKE_CURRENT_LIST_DIR}/deps/ST-LIB)
 set(LD_SCRIPT  ${STLIB_DIR}/STM32H723ZGTX_FLASH.ld)
 set(CONTROL_DIR ${CMAKE_CURRENT_LIST_DIR}/deps/LCU-Control-H11)
@@ -32,7 +28,6 @@ endif()
 option(USE_ETHERNET "Enable ethernet peripheral" OFF)
 option(USE_5_DOF "Build for 5-DOF configuration" OFF)
 option(TARGET_NUCLEO "Targets the STM32H723 Nucleo development board" OFF)
-option(BUILD_EXAMPLES "Build Core/Src/Examples sources" OFF)
 option(USE_CCACHE "Use ccache if available" ON)
 if(NOT DEFINED ENABLE_LTO)
   if(CMAKE_CROSSCOMPILING)
@@ -56,7 +51,6 @@ message(STATUS "Template project: CMAKE_CROSSCOMPILING = ${CMAKE_CROSSCOMPILING}
 message(STATUS "Template project: USE_ETHERNET         = ${USE_ETHERNET}")
 message(STATUS "Template project: USE_5_DOF            = ${USE_5_DOF}")
 message(STATUS "Template project: TARGET_NUCLEO        = ${TARGET_NUCLEO}")
-message(STATUS "Template project: BOARD_NAME           = ${BOARD_NAME}")
 
 add_subdirectory(${STLIB_DIR})
 message(STATUS "Using ST-LIB target: ${STLIB_LIBRARY}")
@@ -70,34 +64,6 @@ file(GLOB_RECURSE SOURCE_HPP  ${CMAKE_SOURCE_DIR}/Core/*.hpp)
 file(GLOB CONTROL_C ${CONTROL_DIR}/*.c ${CONTROL_DIR}/*.cpp ${CONTROL_DIR}/**/*.c ${CONTROL_DIR}/**/*.cpp)
 file(GLOB CONTROL_H ${CONTROL_DIR}/*.h ${CONTROL_DIR}/**/*.h)
 
-file(GLOB_RECURSE GENERATOR_JSONS
-  CONFIGURE_DEPENDS
-  ${CMAKE_SOURCE_DIR}/Core/Inc/Code_generation/JSON_ADE/*.json
-)
-
-set(GENERATED_DATA_PACKETS ${CMAKE_SOURCE_DIR}/Core/Inc/Communications/Packets/DataPackets.hpp)
-set(GENERATED_ORDER_PACKETS ${CMAKE_SOURCE_DIR}/Core/Inc/Communications/Packets/OrderPackets.hpp)
-add_custom_command(
-  OUTPUT
-  ${GENERATED_DATA_PACKETS}
-  ${GENERATED_ORDER_PACKETS}
-  COMMAND ${PYTHON_FOR_TOOLS} ${GENERATOR_SCRIPT} ${BOARD_NAME}
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  DEPENDS
-  ${GENERATOR_SCRIPT}
-  ${CMAKE_SOURCE_DIR}/Core/Inc/Code_generation/Packet_generation/Packet_generation.py
-  ${CMAKE_SOURCE_DIR}/Core/Inc/Code_generation/Packet_generation/Packet_descriptions.py
-  ${CMAKE_SOURCE_DIR}/Core/Inc/Code_generation/Packet_generation/DataTemplate.hpp
-  ${CMAKE_SOURCE_DIR}/Core/Inc/Code_generation/Packet_generation/OrderTemplate.hpp
-  ${GENERATOR_JSONS}
-  COMMENT "Generating packets for ${BOARD_NAME}"
-)
-
-add_custom_target(run_generator
-  DEPENDS
-  ${GENERATED_DATA_PACKETS}
-  ${GENERATED_ORDER_PACKETS}
-)
 
 file(GLOB_RECURSE METADATA_SOURCES
   CONFIGURE_DEPENDS
@@ -134,20 +100,6 @@ if(CMAKE_CROSSCOMPILING)
   file(GLOB_RECURSE SOURCE_H CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/Core/*.h)
   file(GLOB_RECURSE SOURCE_HPP CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/Core/*.hpp)
 
-  if(NOT BUILD_EXAMPLES)
-    file(GLOB_RECURSE EXAMPLE_CPP CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/Core/Src/Examples/*.cpp)
-    list(REMOVE_ITEM SOURCE_CPP ${EXAMPLE_CPP})
-  endif()
-
-  set(EXAMPLE_SELECTED OFF)
-  # If an EXAMPLE_* macro is injected through CXX flags, mark the build as
-  # example-selected so main.cpp can disable only the default main().
-  if(BUILD_EXAMPLES)
-    if(CMAKE_CXX_FLAGS MATCHES "(^|[ \t])-DEXAMPLE_[A-Za-z0-9_]+")
-      set(EXAMPLE_SELECTED ON)
-      message(STATUS "Template project: EXAMPLE_* detected, disabling default main()")
-    endif()
-  endif()
 
   add_executable(${EXECUTABLE}
     ${SOURCE_C}
@@ -223,8 +175,6 @@ if(CMAKE_CROSSCOMPILING)
     $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-Wl,-Map=${PROJECT_NAME}.map,--cref>
     $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-Wl,--gc-sections>
   )
-
-  add_dependencies(${EXECUTABLE} run_generator generate_binary_metadata)
 
   if(ENABLE_LTO)
     set_property(TARGET ${EXECUTABLE} PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)

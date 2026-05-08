@@ -8,7 +8,7 @@ void init() {
     FaultController::start();
     // test_protection_value = 200.0f;
 
-    slave_fault.turn_on();  // Start UP (so that a reset will be noticeable by the master)
+    slave_fault.turn_on();       // Start UP (so that a reset will be noticeable by the master)
     spi.set_software_nss(false); // We'll control NSS via GPIO
     slave_ready.turn_off();
 
@@ -24,7 +24,7 @@ void init() {
     timer16.set_pwm_frequency(20'000);
     timer12.set_pwm_frequency(20'000);
     timer1.set_pwm_frequency(20'000);
-    
+
 #endif
 
     lpu_array.init();
@@ -39,11 +39,38 @@ void init() {
 #ifdef USE_1_DOF
     Frame::init(Communications::comms, lpu, airgap, Communications::comms, lpu);
 #elif defined(USE_5_DOF)
-    Frame::init(Communications::comms,
-                lpu1, lpu2, lpu3, lpu4, lpu5, lpu6, lpu7, lpu8, lpu9, lpu10,
-                airgap1, airgap2, airgap3, airgap4, airgap5, airgap6, airgap7, airgap8,
-                Communications::comms,
-                lpu1, lpu2, lpu3, lpu4, lpu5, lpu6, lpu7, lpu8, lpu9, lpu10);
+    Frame::init(
+        Communications::comms,
+        lpu1,
+        lpu2,
+        lpu3,
+        lpu4,
+        lpu5,
+        lpu6,
+        lpu7,
+        lpu8,
+        lpu9,
+        lpu10,
+        airgap1,
+        airgap2,
+        airgap3,
+        airgap4,
+        airgap5,
+        airgap6,
+        airgap7,
+        airgap8,
+        Communications::comms,
+        lpu1,
+        lpu2,
+        lpu3,
+        lpu4,
+        lpu5,
+        lpu6,
+        lpu7,
+        lpu8,
+        lpu9,
+        lpu10
+    );
 #endif
 }
 
@@ -63,7 +90,8 @@ void update() {
         HAL_NVIC_SystemReset();
     }
 
-    if (abs(lpu1.shunt_v) > 60.0f || abs(lpu2.shunt_v) > 60.0f || abs(lpu3.shunt_v) > 60.0f || abs(lpu4.shunt_v) > 60.0f) {
+    if (abs(lpu1.shunt_v) > 60.0f || abs(lpu2.shunt_v) > 60.0f || abs(lpu3.shunt_v) > 60.0f ||
+        abs(lpu4.shunt_v) > 60.0f) {
         PANIC("Overcurrent detected");
     }
 }

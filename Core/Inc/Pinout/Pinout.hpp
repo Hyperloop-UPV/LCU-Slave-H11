@@ -132,6 +132,6 @@ inline auto& spi_sck = ST_LIB::PC10;
 inline auto& spi_miso = ST_LIB::PC11;
 inline auto& spi_mosi = ST_LIB::PC12;
 inline auto& spi_nss = ST_LIB::PD3; // Will use as GPIO with software NSS management (always active)
-};                           // namespace Pinout
+};                                  // namespace Pinout
 
 #endif // PINOUT_HPP

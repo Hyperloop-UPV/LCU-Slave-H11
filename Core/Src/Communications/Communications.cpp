@@ -61,7 +61,8 @@ void update() {
 
     } else if (send_flag) {
         send_flag = false;
-        LCU_Slave::spi.transceive(LCU_Slave::Frame::tx_buffer, LCU_Slave::Frame::rx_buffer, &spi_flag);
+        LCU_Slave::spi
+            .transceive(LCU_Slave::Frame::tx_buffer, LCU_Slave::Frame::rx_buffer, &spi_flag);
         LCU_Slave::spi.set_software_nss(true);
         LCU_Slave::slave_ready.turn_on();
 

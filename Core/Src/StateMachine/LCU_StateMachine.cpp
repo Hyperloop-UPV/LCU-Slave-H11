@@ -50,14 +50,13 @@ bool transition_connecting_to_idle() {
 
 bool transition_idle_to_levitating() {
     auto cmds = command_packet->flags;
-    return  bool(cmds & CommandFlags::LEVITATE) ||
-            bool(cmds & CommandFlags::CURRENT_CONTROL);
+    return bool(cmds & CommandFlags::LEVITATE) || bool(cmds & CommandFlags::CURRENT_CONTROL);
 }
 
 bool transition_levitating_to_idle() {
     auto cmds = command_packet->flags;
-    bool stop_requested =   !bool(cmds & CommandFlags::LEVITATE) &&
-                            !bool(cmds & CommandFlags::CURRENT_CONTROL);
+    bool stop_requested =
+        !bool(cmds & CommandFlags::LEVITATE) && !bool(cmds & CommandFlags::CURRENT_CONTROL);
     return stop_requested;
 }
 
@@ -138,7 +137,6 @@ void on_levitate_exit() {
     status_packet->Bk[0] = 0.0f;
     status_packet->Bk[1] = 0.0f;
     status_packet->Bk[2] = 0.0f;
-
 }
 
 void update_sensors() {
@@ -154,23 +152,33 @@ void cyclic_levitate_control_current() {
          LCU_Slave::lpu_array.get_lpu<1>().shunt_v,
          LCU_Slave::lpu_array.get_lpu<2>().shunt_v,
          LCU_Slave::lpu_array.get_lpu<3>().shunt_v},
-        direct_current_control ? std::optional<float>(command_packet->current_control.desired_current) : std::nullopt
+        direct_current_control
+            ? std::optional<float>(command_packet->current_control.desired_current)
+            : std::nullopt
     );
     uint16_t current_mask = command_packet->current_control.lpu_id_bitmask;
     bool apply_to_all_for_levitation = levitate_active;
-    
+
 #ifdef USE_1_DOF
     // 1-DOF: Single LPU
     if (apply_to_all_for_levitation || (current_mask & (1 << 0))) {
         LCU_Slave::lpu_array.get_lpu<0>().set_out_voltage(control_output.voltage);
     }
-    
+
 #elif defined(USE_5_DOF)
     // 5-DOF: Apply to all 10 LPUs as specified in bitmask
-    if (apply_to_all_for_levitation || (current_mask & (1 << 0))) { LCU_Slave::lpu_array.get_lpu<0>().set_out_voltage(control_output[0]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 1))) { LCU_Slave::lpu_array.get_lpu<1>().set_out_voltage(control_output[1]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 2))) { LCU_Slave::lpu_array.get_lpu<2>().set_out_voltage(control_output[2]); }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 3))) { LCU_Slave::lpu_array.get_lpu<3>().set_out_voltage(control_output[3]); }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 0))) {
+        LCU_Slave::lpu_array.get_lpu<0>().set_out_voltage(control_output[0]);
+    }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 1))) {
+        LCU_Slave::lpu_array.get_lpu<1>().set_out_voltage(control_output[1]);
+    }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 2))) {
+        LCU_Slave::lpu_array.get_lpu<2>().set_out_voltage(control_output[2]);
+    }
+    if (apply_to_all_for_levitation || (current_mask & (1 << 3))) {
+        LCU_Slave::lpu_array.get_lpu<3>().set_out_voltage(control_output[3]);
+    }
 
     status_packet->desired_current1 = Control::output.CorrienteReferencia[0];
     status_packet->desired_current2 = Control::output.CorrienteReferencia[1];
@@ -194,7 +202,7 @@ void cyclic_levitate_control_current() {
     status_packet->desired_voltage_4 = Control::output.Voltages[3];
 
     status_packet->target_distance = Control::output.Referencia;
-    
+
     status_packet->Fe[0] = Control::output.Fe[0];
     status_packet->Fe[1] = Control::output.Fe[1];
     status_packet->Fe[2] = Control::output.Fe[2];
@@ -250,9 +258,7 @@ void cyclic_levitate_control_distance() {
     }
 }
 
-void start() {
-    Scheduler::register_task(100, update_sensors);
-}
+void start() { Scheduler::register_task(100, update_sensors); }
 
 void update() {
     if (FaultController::is_faulted()) {
@@ -270,27 +276,50 @@ void update() {
     static bool was_enabled = false;
     if (bool(cmds & CommandFlags::ENABLE_LPU_BUFFER)) {
         uint16_t buffer_mask = command_packet->force_enable_lpu_buffer.lpu_buffer_id_bitmask;
-        
+
 #ifdef USE_1_DOF
         // 1-DOF: Single LPU pair
-        if (buffer_mask & 0x03) { LCU_Slave::lpu_array.enable_pair<0>(); }
-        else { LCU_Slave::lpu_array.disable_pair<0>(); }
-        
+        if (buffer_mask & 0x03) {
+            LCU_Slave::lpu_array.enable_pair<0>();
+        } else {
+            LCU_Slave::lpu_array.disable_pair<0>();
+        }
+
 #elif defined(USE_5_DOF)
         // 5-DOF: Enable LPU pairs based on bitmask
         // Each pair corresponds to 1 bit in the mask
-        if (buffer_mask & 0x01) { LCU_Slave::lpu_array.enable_pair<0>(); }  // Pair 0 (LPU 0-1)
-        else { LCU_Slave::lpu_array.disable_pair<0>(); }
-         if (buffer_mask & 0x02) { LCU_Slave::lpu_array.enable_pair<1>(); }  // Pair 1 (LPU 2-3)
-        else { LCU_Slave::lpu_array.disable_pair<1>(); }
-        if (buffer_mask & 0x04) { LCU_Slave::lpu_array.enable_pair<2>(); }  // Pair 2 (LPU 4-5)
-        else { LCU_Slave::lpu_array.disable_pair<2>(); }
-        if (buffer_mask & 0x08) { LCU_Slave::lpu_array.enable_pair<3>(); }  // Pair 3 (LPU 6-7)
-        else { LCU_Slave::lpu_array.disable_pair<3>(); }
-        if (buffer_mask & 0x10) { LCU_Slave::lpu_array.enable_pair<4>(); }  // Pair 4 (LPU 8-9)
-        else { LCU_Slave::lpu_array.disable_pair<4>(); }
+        if (buffer_mask & 0x01) {
+            LCU_Slave::lpu_array.enable_pair<0>();
+        } // Pair 0 (LPU 0-1)
+        else {
+            LCU_Slave::lpu_array.disable_pair<0>();
+        }
+        if (buffer_mask & 0x02) {
+            LCU_Slave::lpu_array.enable_pair<1>();
+        } // Pair 1 (LPU 2-3)
+        else {
+            LCU_Slave::lpu_array.disable_pair<1>();
+        }
+        if (buffer_mask & 0x04) {
+            LCU_Slave::lpu_array.enable_pair<2>();
+        } // Pair 2 (LPU 4-5)
+        else {
+            LCU_Slave::lpu_array.disable_pair<2>();
+        }
+        if (buffer_mask & 0x08) {
+            LCU_Slave::lpu_array.enable_pair<3>();
+        } // Pair 3 (LPU 6-7)
+        else {
+            LCU_Slave::lpu_array.disable_pair<3>();
+        }
+        if (buffer_mask & 0x10) {
+            LCU_Slave::lpu_array.enable_pair<4>();
+        } // Pair 4 (LPU 8-9)
+        else {
+            LCU_Slave::lpu_array.disable_pair<4>();
+        }
 #endif
-        
+
         was_enabled = true;
     } else if (was_enabled) {
         if (sm_operational.get_current_state() != SlaveState::LEVITATING) {

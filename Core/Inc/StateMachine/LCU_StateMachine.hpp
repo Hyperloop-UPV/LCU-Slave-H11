@@ -29,7 +29,6 @@ inline void set_spi_error_counter_ptr(volatile uint32_t* ptr) { spi_error_counte
 
 // End of cleanup todo
 
-
 /**
  * State actions and transition guards
  */
@@ -58,15 +57,11 @@ static constexpr auto state_spi_connecting = make_state(
     Transition{SlaveState::IDLE, transition_connecting_to_idle}
 );
 
-static constexpr auto state_idle = make_state(
-    SlaveState::IDLE,
-    Transition{SlaveState::LEVITATING, transition_idle_to_levitating}
-);
+static constexpr auto state_idle =
+    make_state(SlaveState::IDLE, Transition{SlaveState::LEVITATING, transition_idle_to_levitating});
 
-static constexpr auto state_levitating = make_state(
-    SlaveState::LEVITATING,
-    Transition{SlaveState::IDLE, transition_levitating_to_idle}
-);
+static constexpr auto state_levitating =
+    make_state(SlaveState::LEVITATING, Transition{SlaveState::IDLE, transition_levitating_to_idle});
 
 static constinit auto sm_operational = []() consteval {
     auto sm = make_state_machine(

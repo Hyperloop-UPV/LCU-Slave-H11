@@ -8,9 +8,14 @@
 #include "HALAL/Services/ADC/ADC.hpp"
 #include "Control/Blocks/MovingAverage.hpp"
 
-template <uint32_t ShuntMovingAverageSize, uint32_t VbatMovingAverageSize, typename PWMPositive, typename PWMNegative> class LPU : public LPUBase {
+template <
+    uint32_t ShuntMovingAverageSize,
+    uint32_t VbatMovingAverageSize,
+    typename PWMPositive,
+    typename PWMNegative>
+class LPU : public LPUBase {
 
-bool was_fixed_duty_cycle = false; // Temporal fix
+    bool was_fixed_duty_cycle = false; // Temporal fix
 
 public:
     LPU(PWMPositive& pwm_positive,
@@ -21,8 +26,8 @@ public:
         float vbat_slope,
         float shunt_offset,
         float shunt_slope)
-        : pwm_positive(pwm_positive), pwm_negative(pwm_negative),
-          shunt_moving_avg(), vbat_moving_avg(),
+        : pwm_positive(pwm_positive), pwm_negative(pwm_negative), shunt_moving_avg(),
+          vbat_moving_avg(),
           vbat_sensor(adc_vbat_instance, vbat_slope, vbat_offset, &vbat_v, vbat_moving_avg),
           shunt_sensor(adc_shunt_instance, shunt_slope, shunt_offset, &shunt_v, shunt_moving_avg) {}
 
@@ -90,14 +95,14 @@ public:
     }
 
     bool enable() {
-        #ifdef USE_LPU_READY
+#ifdef USE_LPU_READY
         if (!ready)
             return false;
-        #endif
-        #ifdef USE_LPU_FAULT
+#endif
+#ifdef USE_LPU_FAULT
         if (fault)
             return false;
-        #endif
+#endif
         is_enabled = true;
         return true;
     }
@@ -183,26 +188,30 @@ public:
         std::apply([](auto*... lpu) { (lpu->zeroing(), ...); }, lpus);
     }
 
-    template <size_t PairIndex> requires (LpuCount == 1)
+    template <size_t PairIndex>
+        requires(LpuCount == 1)
     void enable_pair() {
         std::get<0>(enable_pins)->turn_off();
         std::get<0>(lpus)->enable();
     }
 
-    template <size_t PairIndex> requires (LpuCount > 1)
+    template <size_t PairIndex>
+        requires(LpuCount > 1)
     void enable_pair() {
         std::get<PairIndex>(enable_pins)->turn_off();
         std::get<PairIndex * 2>(lpus)->enable();
         std::get<PairIndex * 2 + 1>(lpus)->enable();
     }
 
-    template <size_t PairIndex> requires (LpuCount == 1)
+    template <size_t PairIndex>
+        requires(LpuCount == 1)
     void disable_pair() {
         std::get<0>(enable_pins)->turn_on();
         std::get<0>(lpus)->disable();
     }
 
-    template <size_t PairIndex> requires (LpuCount > 1)
+    template <size_t PairIndex>
+        requires(LpuCount > 1)
     void disable_pair() {
         std::get<PairIndex>(enable_pins)->turn_on();
         std::get<PairIndex * 2>(lpus)->disable();
@@ -226,7 +235,11 @@ LpuArray(std::tuple<LPUs&...>, std::tuple<EnablePins&...>)
     -> LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>>;
 
 // Deduce PWM types while keeping the project-standard moving-average sizes.
-template <uint32_t ShuntMovingAverageSize, uint32_t VbatMovingAverageSize, typename PWMPositive, typename PWMNegative>
+template <
+    uint32_t ShuntMovingAverageSize,
+    uint32_t VbatMovingAverageSize,
+    typename PWMPositive,
+    typename PWMNegative>
 inline auto make_lpu(
     PWMPositive& pwm_positive,
     PWMNegative& pwm_negative,

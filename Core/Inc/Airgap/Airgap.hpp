@@ -8,15 +8,19 @@
 #include "HALAL/Services/ADC/ADC.hpp"
 #include "Control/Blocks/MovingAverage.hpp"
 
-template <uint32_t MovingAverageSize>
-class Airgap : public AirgapBase {
+template <uint32_t MovingAverageSize> class Airgap : public AirgapBase {
     MovingAverage<MovingAverageSize> airgap_moving_avg;
     FilteredLinearSensor<volatile float, MovingAverageSize> airgap_sensor;
 
 public:
     Airgap(ST_LIB::ADCDomain::Instance& airgap_instance, float airgap_offset, float airgap_slope)
-        : airgap_moving_avg(),
-          airgap_sensor(airgap_instance, airgap_slope, airgap_offset, &airgap_v, airgap_moving_avg) {}
+        : airgap_moving_avg(), airgap_sensor(
+                                   airgap_instance,
+                                   airgap_slope,
+                                   airgap_offset,
+                                   &airgap_v,
+                                   airgap_moving_avg
+                               ) {}
 
     void update() { airgap_sensor.read(); }
 
@@ -33,8 +37,7 @@ public:
     }
 };
 
-template <typename... AirgapInstances>
-class AirgapArray {
+template <typename... AirgapInstances> class AirgapArray {
     static constexpr size_t AirgapCount = sizeof...(AirgapInstances);
 
     using AirgapPtrTuple = std::tuple<std::remove_reference_t<AirgapInstances>*...>;
@@ -53,9 +56,7 @@ public:
         std::apply([](auto*... instance) { (instance->zeroing(), ...); }, airgap_instances);
     }
 
-    template <size_t Index> auto& get_airgap() {
-        return *std::get<Index>(airgap_instances);
-    }
+    template <size_t Index> auto& get_airgap() { return *std::get<Index>(airgap_instances); }
 };
 
 // Deduction guide for direct construction from references.
