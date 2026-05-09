@@ -315,20 +315,6 @@ using Board = ST_LIB::Board<
 #endif
     >;
 
-// inline float test_protection_value = 0.0f;
-
-// inline auto test_protection_rules = Protections::bake_rules<float>(
-//     Protections::Rules::above(100.0f, 90.0f).value(),
-//     Protections::Rules::time_accumulation(80.0f, 60.0f, 0.5f).value()
-// );
-
-// using TestProtection =
-//     Protections::ProtectionDeclarationWithRules<
-//         "test_value",
-//         test_protection_value,
-//         test_protection_rules
-//     >;
-
 inline constexpr auto& led_operational = Board::instance_of<led_operational_req>();
 inline constexpr auto& led_fault = Board::instance_of<led_fault_req>();
 inline constexpr auto& master_fault = Board::instance_of<master_fault_req>();
@@ -495,54 +481,33 @@ inline auto airgap8 = Airgap<8>(adc_airgap_8, 0.00000f, 1);
 inline auto airgap_array =
     AirgapArray(airgap1, airgap2, airgap3, airgap4, airgap5, airgap6, airgap7, airgap8);
 
-// inline auto current_protection4_rules = Protections::bake_rules<float>(
-//     Protections::Rules::range(-60.0f, 60.0f, -60.f, 60.0f).value()
-// );
+inline auto protection_current_1 = Protections::protection<
+    "current_1",
+    lpu1.shunt_v>(
+    Protections::Rules::range(-60.0f, 60.0f)
+);
+inline auto protection_current_2 = Protections::protection<
+    "current_2",
+    lpu2.shunt_v>(
+    Protections::Rules::range(-60.0f, 60.0f)
+);
+inline auto protection_current_3 = Protections::protection<
+    "current_3",
+    lpu3.shunt_v>(
+    Protections::Rules::range(-60.0f, 60.0f)
+);
+inline auto protection_current_4 = Protections::protection<
+    "current_4",
+    lpu4.shunt_v>(
+    Protections::Rules::range(-60.0f, 60.0f)
+);
 
-// using CurrentProtection4 = Protections::ProtectionDeclarationWithRules<
-//     "current_4",
-//     lpu4.shunt_v,
-//     current_protection4_rules
-// >;
-
-// inline auto current_protection6_rules = Protections::bake_rules<float>(
-//     Protections::Rules::range(-60.0f, 60.0f, -60.f, 60.0f).value()
-// );
-
-// using CurrentProtection6 = Protections::ProtectionDeclarationWithRules<
-//     "current_6",
-//     lpu6.shunt_v,
-//     current_protection6_rules
-// >;
-
-// inline auto current_protection8_rules = Protections::bake_rules<float>(
-//     Protections::Rules::range(-60.0f, 60.0f, -60.f, 60.0f).value()
-// );
-
-// using CurrentProtection8 = Protections::ProtectionDeclarationWithRules<
-//     "current_8",
-//     lpu8.shunt_v,
-//     current_protection8_rules
-// >;
-
-// inline auto current_protection10_rules = Protections::bake_rules<float>(
-//     Protections::Rules::range(-60.0f, 60.0f, -60.f, 60.0f).value()
-// );
-
-// using CurrentProtection10 = Protections::ProtectionDeclarationWithRules<
-//     "current_10",
-//     lpu10.shunt_v,
-//     current_protection10_rules
-// >;
-
-// using AppProtectionEngine = Protections::ProtectionEngine<
-//     CurrentProtection4,
-//     CurrentProtection6,
-//     CurrentProtection8,
-//     CurrentProtection10
-// >;
-
-using AppProtectionEngine = Protections::ProtectionEngine<>;
+using AppProtectionEngine = Protections::ProtectionEngine<
+    protection_current_1,
+    protection_current_2,
+    protection_current_3,
+    protection_current_4
+>;
 
 #endif
 
