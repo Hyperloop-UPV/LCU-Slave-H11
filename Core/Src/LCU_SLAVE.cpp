@@ -5,8 +5,6 @@ namespace LCU_Slave {
 void init() {
     Board::init();
     AppProtectionEngine::initialize();
-    FaultController::start();
-    // test_protection_value = 200.0f;
 
     slave_fault.turn_on();       // Start UP (so that a reset will be noticeable by the master)
     spi.set_software_nss(false); // We'll control NSS via GPIO
