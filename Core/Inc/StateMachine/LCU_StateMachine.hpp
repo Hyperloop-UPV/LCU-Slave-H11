@@ -52,18 +52,18 @@ void cyclic_levitate_control_distance();
  * State Machine definition
  */
 
-static constexpr auto state_spi_connecting = make_state(
+inline constexpr auto state_spi_connecting = make_state(
     SlaveState::SPI_CONNECTING,
     Transition{SlaveState::IDLE, transition_connecting_to_idle}
 );
 
-static constexpr auto state_idle =
+inline constexpr auto state_idle =
     make_state(SlaveState::IDLE, Transition{SlaveState::LEVITATING, transition_idle_to_levitating});
 
-static constexpr auto state_levitating =
+inline constexpr auto state_levitating =
     make_state(SlaveState::LEVITATING, Transition{SlaveState::IDLE, transition_levitating_to_idle});
 
-static constinit auto sm_operational = []() consteval {
+inline constinit auto sm_operational = []() consteval {
     auto sm = make_state_machine(
         SlaveState::SPI_CONNECTING,
         state_spi_connecting,
