@@ -481,33 +481,20 @@ inline auto airgap8 = Airgap<8>(adc_airgap_8, 0.00000f, 1);
 inline auto airgap_array =
     AirgapArray(airgap1, airgap2, airgap3, airgap4, airgap5, airgap6, airgap7, airgap8);
 
-inline auto protection_current_1 = Protections::protection<
-    "current_1",
-    lpu1.shunt_v>(
-    Protections::Rules::range(-60.0f, 60.0f)
-);
-inline auto protection_current_2 = Protections::protection<
-    "current_2",
-    lpu2.shunt_v>(
-    Protections::Rules::range(-60.0f, 60.0f)
-);
-inline auto protection_current_3 = Protections::protection<
-    "current_3",
-    lpu3.shunt_v>(
-    Protections::Rules::range(-60.0f, 60.0f)
-);
-inline auto protection_current_4 = Protections::protection<
-    "current_4",
-    lpu4.shunt_v>(
-    Protections::Rules::range(-60.0f, 60.0f)
-);
+inline auto protection_current_1 =
+    Protections::protection<"current_1", lpu1.shunt_v>(Protections::Rules::range(-60.0f, 60.0f));
+inline auto protection_current_2 =
+    Protections::protection<"current_2", lpu2.shunt_v>(Protections::Rules::range(-60.0f, 60.0f));
+inline auto protection_current_3 =
+    Protections::protection<"current_3", lpu3.shunt_v>(Protections::Rules::range(-60.0f, 60.0f));
+inline auto protection_current_4 =
+    Protections::protection<"current_4", lpu4.shunt_v>(Protections::Rules::range(-60.0f, 60.0f));
 
 using AppProtectionEngine = Protections::ProtectionEngine<
     protection_current_1,
     protection_current_2,
     protection_current_3,
-    protection_current_4
->;
+    protection_current_4>;
 
 #endif
 
