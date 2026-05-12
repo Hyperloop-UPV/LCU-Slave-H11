@@ -27,14 +27,24 @@
             "name": "dof-1dof",
             "hidden": true,
             "cacheVariables": {
-                "USE_5_DOF": "OFF"
+                "USE_5_DOF": "OFF",
+                "USE_3_DOF": "OFF"
+            }
+        },
+        {
+            "name": "dof-3dof",
+            "hidden": true,
+            "cacheVariables": {
+                "USE_5_DOF": "OFF",
+                "USE_3_DOF": "ON"
             }
         },
         {
             "name": "dof-5dof",
             "hidden": true,
             "cacheVariables": {
-                "USE_5_DOF": "ON"
+                "USE_5_DOF": "ON",
+                "USE_3_DOF": "OFF"
             }
         },
         {
@@ -43,6 +53,18 @@
             "inherits": [
                 "mcu",
                 "dof-1dof"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "TARGET_NUCLEO": "ON"
+            }
+        },
+        {
+            "name": "nucleo-debug-3dof",
+            "displayName": "Nucleo [DBG 3DOF]",
+            "inherits": [
+                "mcu",
+                "dof-3dof"
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
@@ -74,6 +96,18 @@
             }
         },
         {
+            "name": "nucleo-release-3dof",
+            "displayName": "Nucleo [REL 3DOF]",
+            "inherits": [
+                "mcu",
+                "dof-3dof"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "TARGET_NUCLEO": "ON"
+            }
+        },
+        {
             "name": "nucleo-release-5dof",
             "displayName": "Nucleo [REL 5DOF]",
             "inherits": [
@@ -91,6 +125,18 @@
             "inherits": [
                 "mcu",
                 "dof-1dof"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "TARGET_NUCLEO": "ON"
+            }
+        },
+        {
+            "name": "nucleo-relwithdebinfo-3dof",
+            "displayName": "Nucleo [RWD 3DOF]",
+            "inherits": [
+                "mcu",
+                "dof-3dof"
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
@@ -121,6 +167,17 @@
             }
         },
         {
+            "name": "board-debug-3dof",
+            "displayName": "Board [DBG 3DOF]",
+            "inherits": [
+                "mcu",
+                "dof-3dof"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
             "name": "board-debug-5dof",
             "displayName": "Board [DBG 5DOF]",
             "inherits": [
@@ -137,6 +194,17 @@
             "inherits": [
                 "mcu",
                 "dof-1dof"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "board-release-3dof",
+            "displayName": "Board [REL 3DOF]",
+            "inherits": [
+                "mcu",
+                "dof-3dof"
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
@@ -165,6 +233,17 @@
             }
         },
         {
+            "name": "board-relwithdebinfo-3dof",
+            "displayName": "Board [RWD 3DOF]",
+            "inherits": [
+                "mcu",
+                "dof-3dof"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
             "name": "board-relwithdebinfo-5dof",
             "displayName": "Board [RWD 5DOF]",
             "inherits": [
@@ -181,6 +260,17 @@
             "inherits": [
                 "sim",
                 "dof-1dof"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "simulator-3dof",
+            "displayName": "Simulator [3DOF]",
+            "inherits": [
+                "sim",
+                "dof-3dof"
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
@@ -210,6 +300,18 @@
             }
         },
         {
+            "name": "simulator-asan-3dof",
+            "displayName": "Simulator [ASAN+UBSAN 3DOF]",
+            "inherits": [
+                "sim",
+                "dof-3dof"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "STLIB_ENABLE_SANITIZERS": "ON"
+            }
+        },
+        {
             "name": "simulator-asan-5dof",
             "displayName": "Simulator [ASAN+UBSAN 5DOF]",
             "inherits": [
@@ -228,12 +330,20 @@
             "configurePreset": "nucleo-debug-1dof"
         },
         {
+            "name": "nucleo-debug-3dof",
+            "configurePreset": "nucleo-debug-3dof"
+        },
+        {
             "name": "nucleo-debug-5dof",
             "configurePreset": "nucleo-debug-5dof"
         },
         {
             "name": "nucleo-release-1dof",
             "configurePreset": "nucleo-release-1dof"
+        },
+        {
+            "name": "nucleo-release-3dof",
+            "configurePreset": "nucleo-release-3dof"
         },
         {
             "name": "nucleo-release-5dof",
@@ -244,12 +354,20 @@
             "configurePreset": "nucleo-relwithdebinfo-1dof"
         },
         {
+            "name": "nucleo-relwithdebinfo-3dof",
+            "configurePreset": "nucleo-relwithdebinfo-3dof"
+        },
+        {
             "name": "nucleo-relwithdebinfo-5dof",
             "configurePreset": "nucleo-relwithdebinfo-5dof"
         },
         {
             "name": "board-debug-1dof",
             "configurePreset": "board-debug-1dof"
+        },
+        {
+            "name": "board-debug-3dof",
+            "configurePreset": "board-debug-3dof"
         },
         {
             "name": "board-debug-5dof",
@@ -260,12 +378,20 @@
             "configurePreset": "board-release-1dof"
         },
         {
+            "name": "board-release-3dof",
+            "configurePreset": "board-release-3dof"
+        },
+        {
             "name": "board-release-5dof",
             "configurePreset": "board-release-5dof"
         },
         {
             "name": "board-relwithdebinfo-1dof",
             "configurePreset": "board-relwithdebinfo-1dof"
+        },
+        {
+            "name": "board-relwithdebinfo-3dof",
+            "configurePreset": "board-relwithdebinfo-3dof"
         },
         {
             "name": "board-relwithdebinfo-5dof",
@@ -276,12 +402,20 @@
             "configurePreset": "simulator-1dof"
         },
         {
+            "name": "simulator-3dof",
+            "configurePreset": "simulator-3dof"
+        },
+        {
             "name": "simulator-5dof",
             "configurePreset": "simulator-5dof"
         },
         {
             "name": "simulator-asan-1dof",
             "configurePreset": "simulator-asan-1dof"
+        },
+        {
+            "name": "simulator-asan-3dof",
+            "configurePreset": "simulator-asan-3dof"
         },
         {
             "name": "simulator-asan-5dof",
@@ -292,6 +426,16 @@
         {
             "name": "simulator-all-1dof",
             "configurePreset": "simulator-1dof",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error"
+            }
+        },
+        {
+            "name": "simulator-all-3dof",
+            "configurePreset": "simulator-3dof",
             "output": {
                 "outputOnFailure": true
             },
@@ -325,6 +469,21 @@
             }
         },
         {
+            "name": "simulator-adc-3dof",
+            "configurePreset": "simulator-3dof",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "name": "ADCTest"
+                }
+            }
+        },
+        {
             "name": "simulator-adc-5dof",
             "configurePreset": "simulator-5dof",
             "output": {
@@ -342,6 +501,16 @@
         {
             "name": "simulator-all-asan-1dof",
             "configurePreset": "simulator-asan-1dof",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error"
+            }
+        },
+        {
+            "name": "simulator-all-asan-3dof",
+            "configurePreset": "simulator-asan-3dof",
             "output": {
                 "outputOnFailure": true
             },

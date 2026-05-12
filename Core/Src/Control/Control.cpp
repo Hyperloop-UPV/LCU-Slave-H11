@@ -7,12 +7,12 @@ void init() { model.initialize(); }
 
 void deinit() { model.terminate(); }
 
-std::array<float, CONTROL_LPU_COUNT> current_update(
-    std::array<float, CONTROL_LPU_COUNT> input_currents,
+std::array<float, LCUConfig::ACTIVE_LPU_COUNT> current_update(
+    const std::array<float, LCUConfig::ACTIVE_LPU_COUNT>& input_currents,
     std::optional<float> desired_current
 ) {
 
-    for (size_t i = 0; i < CONTROL_LPU_COUNT; i++) {
+    for (size_t i = 0; i < LCUConfig::ACTIVE_LPU_COUNT; i++) {
         inputs.I_HEMS[i] = input_currents[i];
     }
 
@@ -25,8 +25,8 @@ std::array<float, CONTROL_LPU_COUNT> current_update(
 
     model.step0();
 
-    std::array<float, CONTROL_LPU_COUNT> output_currents{};
-    for (size_t i = 0; i < CONTROL_LPU_COUNT; i++) {
+    std::array<float, LCUConfig::ACTIVE_LPU_COUNT> output_currents{};
+    for (size_t i = 0; i < LCUConfig::ACTIVE_LPU_COUNT; i++) {
         output_currents[i] = static_cast<float>(output.Voltages[i]);
     }
 
@@ -34,12 +34,12 @@ std::array<float, CONTROL_LPU_COUNT> current_update(
 }
 
 void levitation_update(
-    std::array<float, CONTROL_AIRGAP_COUNT> input_airgaps,
+    const std::array<float, LCUConfig::ACTIVE_AIRGAP_COUNT>& input_airgaps,
     float reference,
     bool ramping
 ) {
 
-    for (size_t i = 0; i < CONTROL_AIRGAP_COUNT; i++) {
+    for (size_t i = 0; i < LCUConfig::ACTIVE_AIRGAP_COUNT; i++) {
         inputs.Sensores[i] = input_airgaps[i];
     }
 

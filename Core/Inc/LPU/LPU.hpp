@@ -59,15 +59,10 @@ public:
      * @brief Set the duty cycle based on the desired output voltage and the current battery voltage
      */
     bool set_out_voltage(float voltage) {
-        // if (voltage > 80.0f) {
-        //     voltage = 80.0f;
-        // } else if (voltage < -80.0f) {
-        //     voltage = -80.0f;
-        // }
         if (is_fixed_duty_cycle) {
             return true;
         }
-        // Avoid division by zero, but this shouldn't happen I think?
+        // Avoid division by zero
         if (vbat_v < 5.0f) {
             set_duty(0.0f);
             return false;
@@ -80,10 +75,6 @@ public:
     }
 
     void set_duty(float duty) {
-        // if (abs(duty) > 30.0f) {
-        //     PANIC("Duty cycle too high");
-        //     duty = 0.0f;
-        // }
         if (duty >= 0.0f) {
             pwm_negative.set_duty_cycle(0.0f);
             pwm_positive.set_duty_cycle(duty);
@@ -142,18 +133,13 @@ private:
     FilteredLinearSensor<volatile float, ShuntMovingAverageSize> shunt_sensor;
 };
 
+// Forward declaration
 template <typename LPUTuple, typename EnablePinTuple> class LpuArray;
 
+// Partial specialization for tuple types
 template <typename... LPUs, typename... EnablePins>
 class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
     static constexpr size_t LpuCount = sizeof...(LPUs);
-    static constexpr size_t PinCount = sizeof...(EnablePins);
-
-    static_assert(
-        LpuCount == PinCount * 2 || (LpuCount == 1 && PinCount == 1),
-        "Configuration Error: Must have exactly 2 LPUs per Enable Pin or have only 1 LPU and 1 "
-        "Enable Pin (1DOF)."
-    );
 
     using LPUPtrTuple = std::tuple<std::remove_reference_t<LPUs>*...>;
     using PinPtrTuple = std::tuple<std::remove_reference_t<EnablePins>*...>;
@@ -164,10 +150,9 @@ class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
     bool all_ok = true;
 
 public:
-    LpuArray(std::tuple<LPUs&...> _lpus, std::tuple<EnablePins&...> _pins) {
-        lpus = std::apply([](auto&... lpu) { return std::make_tuple(&lpu...); }, _lpus);
-        enable_pins = std::apply([](auto&... pin) { return std::make_tuple(&pin...); }, _pins);
-    }
+    LpuArray(std::tuple<LPUs...> _lpus, std::tuple<EnablePins...> _pins)
+        : lpus(std::apply([](auto&... lpu) { return std::make_tuple(&lpu...); }, _lpus)),
+          enable_pins(std::apply([](auto&... pin) { return std::make_tuple(&pin...); }, _pins)) {}
 
     void init() {
         std::apply([](auto&... lpu) { (lpu->init(), ...); }, lpus);
@@ -188,36 +173,6 @@ public:
         std::apply([](auto*... lpu) { (lpu->zeroing(), ...); }, lpus);
     }
 
-    template <size_t PairIndex>
-        requires(LpuCount == 1)
-    void enable_pair() {
-        std::get<0>(enable_pins)->turn_off();
-        std::get<0>(lpus)->enable();
-    }
-
-    template <size_t PairIndex>
-        requires(LpuCount > 1)
-    void enable_pair() {
-        std::get<PairIndex>(enable_pins)->turn_off();
-        std::get<PairIndex * 2>(lpus)->enable();
-        std::get<PairIndex * 2 + 1>(lpus)->enable();
-    }
-
-    template <size_t PairIndex>
-        requires(LpuCount == 1)
-    void disable_pair() {
-        std::get<0>(enable_pins)->turn_on();
-        std::get<0>(lpus)->disable();
-    }
-
-    template <size_t PairIndex>
-        requires(LpuCount > 1)
-    void disable_pair() {
-        std::get<PairIndex>(enable_pins)->turn_on();
-        std::get<PairIndex * 2>(lpus)->disable();
-        std::get<PairIndex * 2 + 1>(lpus)->disable();
-    }
-
     bool update_all() {
         all_ok = true;
         std::apply([&](auto&... lpu) { ((all_ok &= lpu->update()), ...); }, lpus);
@@ -227,11 +182,32 @@ public:
     bool is_all_ok() { return all_ok; }
 
     template <size_t Index> auto& get_lpu() { return *std::get<Index>(lpus); }
+
+    // Returns array of all shunt readings
+    auto get_shunt_readings() const {
+        return get_shunt_readings_impl(std::make_index_sequence<LpuCount>{});
+    }
+
+    // Sets voltages for all LPUs from an array
+    void set_out_voltages(const std::array<float, LpuCount>& voltages) {
+        set_voltages_impl(voltages, std::make_index_sequence<LpuCount>{});
+    }
+
+private:
+    template <size_t... Is>
+    auto get_shunt_readings_impl(std::index_sequence<Is...>) const {
+        return std::array<float, LpuCount>{std::get<Is>(lpus)->shunt_v...};
+    }
+
+    template <size_t... Is>
+    void set_voltages_impl(const std::array<float, LpuCount>& voltages, std::index_sequence<Is...>) {
+        (std::get<Is>(lpus)->set_out_voltage(voltages[Is]), ...);
+    }
 };
 
 // Deduction guide for LpuArray
 template <typename... LPUs, typename... EnablePins>
-LpuArray(std::tuple<LPUs&...>, std::tuple<EnablePins&...>)
+LpuArray(std::tuple<LPUs...>, std::tuple<EnablePins...>)
     -> LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>>;
 
 // Deduce PWM types while keeping the project-standard moving-average sizes.

@@ -5,21 +5,14 @@
 #include "LPU/LPU.hpp"
 #include "Airgap/Airgap.hpp"
 #include "Pinout/Pinout.hpp"
+#include "Config/LCUHardwareConfig.hpp"
 #include "ConfigShared.hpp"
 #include "SpiShared.hpp"
 #include "FlagsShared.hpp"
 #include "StateMachine/LCU_StateMachine.hpp"
 #include "Communications/Communications.hpp"
 
-// ============================================
-// Hardware Configuration
-// ============================================
-
 namespace LCU_Slave {
-
-/**
- * Main API
- */
 
 void init();
 void update();
@@ -47,29 +40,11 @@ inline constexpr auto master_fault_req = ST_LIB::EXTIDomain::Device(
 inline constexpr auto slave_fault_req =
     ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::slave_fault);
 
-// Timer and PWM configuration
-#ifdef USE_1_DOF
-inline constexpr auto pwm_positive = ST_LIB::TimerPin(
-    {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm1_1, .channel = Pinout::pwm1_channel_1}
-);
+// ============================================
+// Hardware Configuration (always defined)
+// ============================================
 
-inline constexpr auto pwm_negative = ST_LIB::TimerPin(
-    {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm1_2, .channel = Pinout::pwm1_channel_2}
-);
-
-inline constexpr auto timer =
-    ST_LIB::TimerDomain::Timer({.request = Pinout::timer15}, pwm_positive, pwm_negative);
-
-inline constexpr auto en_buff = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_1);
-
-inline float vbat_buffer = 0.0f;
-inline float shunt_buffer = 0.0f;
-inline float airgap_buffer = 0.0f;
-
-inline constexpr auto adc_vbat = ST_LIB::ADCDomain::ADC(Pinout::vbat_1, vbat_buffer);
-inline constexpr auto adc_shunt = ST_LIB::ADCDomain::ADC(Pinout::shunt_1, shunt_buffer);
-inline constexpr auto adc_airgap = ST_LIB::ADCDomain::ADC(Pinout::airgap_1, airgap_buffer);
-#elif defined(USE_5_DOF)
+// Timer and PWM definitions
 inline constexpr auto pwm_positive_1_req = ST_LIB::TimerPin(
     {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm1_1, .channel = Pinout::pwm1_channel_1}
 );
@@ -174,12 +149,14 @@ inline constexpr auto timer1_req = ST_LIB::TimerDomain::Timer(
     pwm_negative_10_req
 );
 
+// EN_BUFF pins
 inline constexpr auto en_buff_1_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_1);
 inline constexpr auto en_buff_2_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_2);
 inline constexpr auto en_buff_3_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_3);
 inline constexpr auto en_buff_4_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_4);
 inline constexpr auto en_buff_5_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_5);
 
+// ADC buffers
 inline float vbat_1_buffer = 0.0f;
 inline float vbat_2_buffer = 0.0f;
 inline float vbat_3_buffer = 0.0f;
@@ -209,6 +186,7 @@ inline float airgap_6_buffer = 0.0f;
 inline float airgap_7_buffer = 0.0f;
 inline float airgap_8_buffer = 0.0f;
 
+// ADC instances
 inline constexpr auto adc_vbat_1_req = ST_LIB::ADCDomain::ADC(Pinout::vbat_1, vbat_1_buffer);
 inline constexpr auto adc_vbat_2_req = ST_LIB::ADCDomain::ADC(Pinout::vbat_2, vbat_2_buffer);
 inline constexpr auto adc_vbat_3_req = ST_LIB::ADCDomain::ADC(Pinout::vbat_3, vbat_3_buffer);
@@ -238,8 +216,7 @@ inline constexpr auto adc_airgap_6_req = ST_LIB::ADCDomain::ADC(Pinout::airgap_6
 inline constexpr auto adc_airgap_7_req = ST_LIB::ADCDomain::ADC(Pinout::airgap_7, airgap_7_buffer);
 inline constexpr auto adc_airgap_8_req = ST_LIB::ADCDomain::ADC(Pinout::airgap_8, airgap_8_buffer);
 
-#endif
-
+// SPI
 inline constexpr auto spi_req = ST_LIB::SPIDomain::
     Device<ST_LIB::DMADomain::Stream::dma1_stream5, ST_LIB::DMADomain::Stream::dma1_stream6>(
         ST_LIB::SPIDomain::SPIMode::SLAVE,
@@ -264,13 +241,6 @@ using Board = ST_LIB::Board<
     slave_fault_req,
     spi_req,
     slave_ready_req,
-#ifdef USE_1_DOF
-    timer,
-    en_buff,
-    adc_vbat,
-    adc_shunt,
-    adc_airgap
-#elif defined(USE_5_DOF)
     timer15_req,
     timer3_req,
     timer8_req,
@@ -312,41 +282,17 @@ using Board = ST_LIB::Board<
     adc_airgap_6_req,
     adc_airgap_7_req,
     adc_airgap_8_req
-#endif
     >;
 
 inline constexpr auto& led_operational = Board::instance_of<led_operational_req>();
 inline constexpr auto& led_fault = Board::instance_of<led_fault_req>();
 inline constexpr auto& master_fault = Board::instance_of<master_fault_req>();
 inline constexpr auto& slave_fault = Board::instance_of<slave_fault_req>();
-inline auto spi = ST_LIB::SPIDomain::SPIWrapper<spi_req>(Board::instance_of<spi_req>()
-); // Should make SPI get instance in compile-time
+inline auto spi = ST_LIB::SPIDomain::SPIWrapper<spi_req>(Board::instance_of<spi_req>());
 inline constexpr auto& slave_ready = Board::instance_of<slave_ready_req>();
-#ifdef USE_1_DOF
-inline auto timer = get_timer_instance(Board, timer_req);
-inline auto pwm_positive = timer.template get_pwm<pwm_positive_req>();
-inline auto pwm_negative = timer.template get_pwm<pwm_negative_req>();
-inline constexpr auto& en_buff = Board::instance_of<en_buff>();
-inline constexpr auto& adc_vbat = Board::instance_of<adc_vbat>();
-inline constexpr auto& adc_shunt = Board::instance_of<adc_shunt>();
-inline constexpr auto& adc_airgap = Board::instance_of<adc_airgap>();
 
-inline auto lpu = make_lpu<1, 1>(
-    my_pwm_positive,
-    my_pwm_negative,
-    adc_vbat,
-    adc_shunt,
-    0.0f,
-    1.0f,
-    344.5f,
-    -197.1f
-);
-inline auto lpu_array = LpuArrayType(std::tie(lpu), std::tie(en_buff));
-inline auto airgap = Airgap<8>(adc_airgap, 0.00020f, 0.006987);
-inline auto airgap_array = AirgapArray(airgap);
-#elif defined(USE_5_DOF)
-inline auto timer15 =
-    get_timer_instance(Board, timer15_req); // Should get timers get instance in compile-time
+// Timer instances
+inline auto timer15 = get_timer_instance(Board, timer15_req);
 inline auto timer3 = get_timer_instance(Board, timer3_req);
 inline auto timer8 = get_timer_instance(Board, timer8_req);
 inline auto timer4 = get_timer_instance(Board, timer4_req);
@@ -354,8 +300,9 @@ inline auto timer17 = get_timer_instance(Board, timer17_req);
 inline auto timer16 = get_timer_instance(Board, timer16_req);
 inline auto timer12 = get_timer_instance(Board, timer12_req);
 inline auto timer1 = get_timer_instance(Board, timer1_req);
-inline auto pwm_positive_1 = timer15.template get_pwm<pwm_positive_1_req>(
-); // Should get PWM channels get instance in compile-time
+
+// PWM channels
+inline auto pwm_positive_1 = timer15.template get_pwm<pwm_positive_1_req>();
 inline auto pwm_negative_1 = timer15.template get_pwm<pwm_negative_1_req>();
 inline auto pwm_positive_2 = timer3.template get_pwm<pwm_positive_2_req>();
 inline auto pwm_negative_2 = timer3.template get_pwm<pwm_negative_2_req>();
@@ -375,11 +322,15 @@ inline auto pwm_positive_9 = timer1.template get_pwm<pwm_positive_9_req>();
 inline auto pwm_negative_9 = timer1.template get_pwm<pwm_negative_9_req>();
 inline auto pwm_positive_10 = timer1.template get_pwm<pwm_positive_10_req>();
 inline auto pwm_negative_10 = timer1.template get_pwm<pwm_negative_10_req>();
+
+// EN_BUFF pins
 inline constexpr auto& en_buff_1 = Board::instance_of<en_buff_1_req>();
 inline constexpr auto& en_buff_2 = Board::instance_of<en_buff_2_req>();
 inline constexpr auto& en_buff_3 = Board::instance_of<en_buff_3_req>();
 inline constexpr auto& en_buff_4 = Board::instance_of<en_buff_4_req>();
 inline constexpr auto& en_buff_5 = Board::instance_of<en_buff_5_req>();
+
+// ADC instances
 inline constexpr auto& adc_vbat_1 = Board::instance_of<adc_vbat_1_req>();
 inline constexpr auto& adc_vbat_2 = Board::instance_of<adc_vbat_2_req>();
 inline constexpr auto& adc_vbat_3 = Board::instance_of<adc_vbat_3_req>();
@@ -409,94 +360,177 @@ inline constexpr auto& adc_airgap_6 = Board::instance_of<adc_airgap_6_req>();
 inline constexpr auto& adc_airgap_7 = Board::instance_of<adc_airgap_7_req>();
 inline constexpr auto& adc_airgap_8 = Board::instance_of<adc_airgap_8_req>();
 
-inline auto lpu10 =
-    make_lpu<2, 1>(pwm_positive_1, pwm_negative_1, adc_vbat_1, adc_shunt_1, 0.0f, 1.0f, 0.0f, 1.0f);
-inline auto lpu6 =
-    make_lpu<2, 1>(pwm_positive_2, pwm_negative_2, adc_vbat_2, adc_shunt_2, 0.0f, 1.0f, 0.0f, 1.0f);
-inline auto lpu8 =
-    make_lpu<2, 1>(pwm_positive_3, pwm_negative_3, adc_vbat_3, adc_shunt_3, 0.0f, 1.0f, 0.0f, 1.0f);
-inline auto lpu2 = make_lpu<2, 1>(
-    pwm_positive_4,
-    pwm_negative_4,
-    adc_vbat_4,
-    adc_shunt_4,
-    0.0f,
-    1.0f,
-    // 310.3f, -181.0f // Characterized for LPU2
-    304.1f,
-    -177.5f // Characterized for LPU3
-);
-inline auto lpu5 =
-    make_lpu<2, 1>(pwm_positive_5, pwm_negative_5, adc_vbat_5, adc_shunt_5, 0.0f, 1.0f, 0.0f, 1.0f);
-inline auto lpu4 = make_lpu<2, 1>(
-    pwm_positive_6,
-    pwm_negative_6,
-    adc_vbat_6,
-    adc_shunt_6,
-    0.0f,
-    1.0f,
-    317.0f,
-    -184.8f // Characterized for LPU7
-);
-inline auto lpu7 =
-    make_lpu<2, 1>(pwm_positive_7, pwm_negative_7, adc_vbat_7, adc_shunt_7, 0.0f, 1.0f, 0.0f, 1.0f);
-inline auto lpu3 = make_lpu<2, 1>(
-    pwm_positive_8,
-    pwm_negative_8,
-    adc_vbat_8,
-    adc_shunt_8,
-    0.0f,
-    1.0f,
-    329.0f,
-    -193.4f // Characterized for LPU4
-);
-inline auto lpu9 =
-    make_lpu<2, 1>(pwm_positive_9, pwm_negative_9, adc_vbat_9, adc_shunt_9, 0.0f, 1.0f, 0.0f, 1.0f);
-inline auto lpu1 = make_lpu<2, 1>(
-    pwm_positive_10,
-    pwm_negative_10,
-    adc_vbat_10,
-    adc_shunt_10,
-    0.0f,
-    1.0f,
-    317.0f,
-    -185.1f // Characterized for LPU1
-);
-inline auto lpu_array = LpuArray(
-    std::tie(lpu1, lpu2, lpu3, lpu4, lpu5, lpu6, lpu7, lpu8, lpu9, lpu10),
-    std::tie(en_buff_1, en_buff_2, en_buff_3, en_buff_4, en_buff_5)
-);
-inline auto airgap5 = Airgap<8>(adc_airgap_1, 0.00000f, 1);
-inline auto airgap1 = Airgap<8>(adc_airgap_2, 0.07934f + 0.0023 - 0.0075f - 0.0018f, 0.01159f);
-inline auto airgap4 = Airgap<8>(adc_airgap_3, 0.07937f + 0.0016 - 0.0075f - 0.002f, 0.01155f);
-inline auto airgap3 = Airgap<8>(adc_airgap_4, 0.07928f + 0.0016 - 0.0075f - 0.0027f, 0.01175f);
-inline auto airgap2 = Airgap<8>(adc_airgap_5, 0.07926f + 0.0023 - 0.0075f - 0.0022f, 0.01158f);
-// inline auto airgap2 = Airgap<8>(adc_airgap_2, 0.0f, 1.0f);
-// inline auto airgap3 = Airgap<8>(adc_airgap_3, 0.0f, 1.0f);
-// inline auto airgap4 = Airgap<8>(adc_airgap_4, 0.0f, 1.0f);
-// inline auto airgap5 = Airgap<8>(adc_airgap_5, 0.0f, 1.0f);
-inline auto airgap6 = Airgap<8>(adc_airgap_6, 0.00000f, 1);
-inline auto airgap7 = Airgap<8>(adc_airgap_7, 0.00000f, 1);
-inline auto airgap8 = Airgap<8>(adc_airgap_8, 0.00000f, 1);
-inline auto airgap_array =
-    AirgapArray(airgap1, airgap2, airgap3, airgap4, airgap5, airgap6, airgap7, airgap8);
+// ============================================
+// Hardware tuples (all defined, used by pack expansion)
+// ============================================
 
-inline auto protection_current_1 =
-    Protections::protection<"current_1", lpu1.shunt_v>(Protections::Rules::range(-60.0f, 60.0f));
-inline auto protection_current_2 =
-    Protections::protection<"current_2", lpu2.shunt_v>(Protections::Rules::range(-60.0f, 60.0f));
-inline auto protection_current_3 =
-    Protections::protection<"current_3", lpu3.shunt_v>(Protections::Rules::range(-60.0f, 60.0f));
-inline auto protection_current_4 =
-    Protections::protection<"current_4", lpu4.shunt_v>(Protections::Rules::range(-60.0f, 60.0f));
+// PWM pairs tuple (connector index 0..9)
+inline auto all_pwm_positive = std::make_tuple(
+    &pwm_positive_1, &pwm_positive_2, &pwm_positive_3, &pwm_positive_4,
+    &pwm_positive_5, &pwm_positive_6, &pwm_positive_7, &pwm_positive_8,
+    &pwm_positive_9, &pwm_positive_10
+);
+inline auto all_pwm_negative = std::make_tuple(
+    &pwm_negative_1, &pwm_negative_2, &pwm_negative_3, &pwm_negative_4,
+    &pwm_negative_5, &pwm_negative_6, &pwm_negative_7, &pwm_negative_8,
+    &pwm_negative_9, &pwm_negative_10
+);
 
-using AppProtectionEngine = Protections::ProtectionEngine<
-    protection_current_1,
-    protection_current_2,
-    protection_current_3,
-    protection_current_4>;
+// ADC tuples (connector index 0..9 for vbat/shunt, 0..7 for airgap)
+inline auto all_adc_vbat = std::make_tuple(
+    &adc_vbat_1, &adc_vbat_2, &adc_vbat_3, &adc_vbat_4, &adc_vbat_5,
+    &adc_vbat_6, &adc_vbat_7, &adc_vbat_8, &adc_vbat_9, &adc_vbat_10
+);
+inline auto all_adc_shunt = std::make_tuple(
+    &adc_shunt_1, &adc_shunt_2, &adc_shunt_3, &adc_shunt_4, &adc_shunt_5,
+    &adc_shunt_6, &adc_shunt_7, &adc_shunt_8, &adc_shunt_9, &adc_shunt_10
+);
+inline auto all_adc_airgap = std::make_tuple(
+    &adc_airgap_1, &adc_airgap_2, &adc_airgap_3, &adc_airgap_4,
+    &adc_airgap_5, &adc_airgap_6, &adc_airgap_7, &adc_airgap_8
+);
 
-#endif
+// EN_BUFF tuple (connector index 0..4)
+inline auto all_en_buff = std::make_tuple(
+    &en_buff_1, &en_buff_2, &en_buff_3, &en_buff_4, &en_buff_5
+);
+
+// LPU characterization parameters (connector index 0..9)
+// {vbat_offset, vbat_slope, shunt_offset, shunt_slope}
+constexpr std::array<std::array<float, 4>, 10> lpu_params = {{
+    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 0 (lpu)
+    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 1 (lpu)
+    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 2 (lpu)
+    {0.0f, 1.0f, 304.1f, -177.5f},  // connector 3 (lpu3)
+    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 4 (lpu)
+    {0.0f, 1.0f, 317.0f, -184.8f},  // connector 5 (lpu7)
+    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 6 (lpu)
+    {0.0f, 1.0f, 329.0f, -193.4f},  // connector 7 (lpu4)
+    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 8 (lpu)
+    {0.0f, 1.0f, 317.0f, -185.1f},  // connector 9 (lpu1)
+}};
+
+// Airgap characterization parameters (connector index 0..7)
+// {offset, slope}
+constexpr std::array<std::array<float, 2>, 8> airgap_params = {{
+    {0.00000f, 1},                                              // connector 0 (airgap)
+    {0.07934f + 0.0023 - 0.0075f - 0.0018f, 0.01159f},          // connector 1 (airgap2)
+    {0.07937f + 0.0016 - 0.0075f - 0.002f, 0.01155f},           // connector 2 (airgap3)
+    {0.07928f + 0.0016 - 0.0075f - 0.0027f, 0.01175f},          // connector 3 (airgap4)
+    {0.07926f + 0.0023 - 0.0075f - 0.0022f, 0.01158f},          // connector 4 (airgap1)
+    {0.00000f, 1},                                              // connector 5 (airgap)
+    {0.00000f, 1},                                              // connector 6 (airgap)
+    {0.00000f, 1},                                              // connector 7 (airgap)
+}};
+
+// ============================================
+// LPU and Airgap setup using pack expansion
+// ============================================
+
+// Helper to create a single LPU from virtual index
+template <size_t VirtualIdx>
+auto make_lpu_from_config() {
+    constexpr auto id = LCUConfig::lpu_virtual_to_connector(VirtualIdx);
+    return make_lpu<2, 1>(
+        *std::get<id>(all_pwm_positive),
+        *std::get<id>(all_pwm_negative),
+        *std::get<id>(all_adc_vbat),
+        *std::get<id>(all_adc_shunt),
+        lpu_params[id][0], lpu_params[id][1],
+        lpu_params[id][2], lpu_params[id][3]
+    );
+}
+
+// Helper to create a single Airgap from virtual index
+template <size_t VirtualIdx>
+auto make_airgap_from_config() {
+    constexpr auto id = LCUConfig::airgap_virtual_to_connector(VirtualIdx);
+    return Airgap<8>(
+        *std::get<id>(all_adc_airgap),
+        airgap_params[id][0],
+        airgap_params[id][1]
+    );
+}
+
+// Generate LPU tuple via pack expansion
+template <size_t... Is>
+auto make_lpu_tuple(std::index_sequence<Is...>) {
+    return std::make_tuple(make_lpu_from_config<Is>()...);
+}
+
+// Generate Airgap tuple via pack expansion
+template <size_t... Is>
+auto make_airgap_tuple(std::index_sequence<Is...>) {
+    return std::make_tuple(make_airgap_from_config<Is>()...);
+}
+
+// Generate en_buff tuple for active count
+template <size_t... Is>
+auto make_en_buff_tuple(std::index_sequence<Is...>) {
+    return std::make_tuple(*std::get<Is>(all_en_buff)...);
+}
+
+// LPU setup: creates only active LPUs using pack expansion
+inline auto lpu_setup = []() {
+    auto lpu_tuple = make_lpu_tuple(std::make_index_sequence<LCUConfig::ACTIVE_LPU_COUNT>{});
+    auto en_buff_tuple = make_en_buff_tuple(std::make_index_sequence<LCUConfig::ACTIVE_EN_BUFF_COUNT>{});
+    auto arr = LpuArray(lpu_tuple, en_buff_tuple);
+    return std::make_tuple(lpu_tuple, arr);
+}();
+
+inline auto& lpu_tuple = std::get<0>(lpu_setup);
+inline auto& lpu_array = std::get<1>(lpu_setup);
+
+// Airgap setup: creates only active airgaps using pack expansion
+inline auto airgap_setup = []() {
+    auto airgap_tuple = make_airgap_tuple(std::make_index_sequence<LCUConfig::ACTIVE_AIRGAP_COUNT>{});
+    auto arr = AirgapArray(airgap_tuple);
+    return std::make_pair(airgap_tuple, arr);
+}();
+
+inline auto& airgap_array = airgap_setup.second;
+
+template <size_t VirtualIdx>
+consteval auto lpu_overcurrent_name() {
+    if constexpr (VirtualIdx == 0) return Protections::FixedString{"LPU1 overcurrent"};
+    else if constexpr (VirtualIdx == 1) return Protections::FixedString{"LPU2 overcurrent"};
+    else if constexpr (VirtualIdx == 2) return Protections::FixedString{"LPU3 overcurrent"};
+    else if constexpr (VirtualIdx == 3) return Protections::FixedString{"LPU4 overcurrent"};
+    else if constexpr (VirtualIdx == 4) return Protections::FixedString{"LPU5 overcurrent"};
+    else if constexpr (VirtualIdx == 5) return Protections::FixedString{"LPU6 overcurrent"};
+    else if constexpr (VirtualIdx == 6) return Protections::FixedString{"LPU7 overcurrent"};
+    else if constexpr (VirtualIdx == 7) return Protections::FixedString{"LPU8 overcurrent"};
+    else if constexpr (VirtualIdx == 8) return Protections::FixedString{"LPU9 overcurrent"};
+    else return Protections::FixedString{"LPU10 overcurrent"};
+}
+
+template <size_t Idx>
+inline constexpr auto& shunt_ref = get<Idx>(lpu_tuple).shunt_v;
+
+template <size_t VirtualIdx>
+consteval auto make_lpu_protection() {
+    return Protections::protection<
+        lpu_overcurrent_name<VirtualIdx>(),
+        shunt_ref<VirtualIdx>
+    >(Protections::Rules::range(-60.0f, 60.0f));
+}
+
+template <size_t VirtualIdx>
+struct LpuProtectionSpec {
+    inline static constexpr auto spec = make_lpu_protection<VirtualIdx>();
+};
+
+template <typename Seq>
+struct ProtectionEngineBuilder;
+
+template <size_t... Is>
+struct ProtectionEngineBuilder<std::index_sequence<Is...>> {
+    using type = Protections::ProtectionEngine<LpuProtectionSpec<Is>::spec...>;
+};
+
+using AppProtectionEngine = typename ProtectionEngineBuilder<
+    std::make_index_sequence<LCUConfig::ACTIVE_LPU_COUNT>
+>::type;
 
 } // namespace LCU_Slave
 

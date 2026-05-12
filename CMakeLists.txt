@@ -27,6 +27,7 @@ endif()
 
 option(USE_ETHERNET "Enable ethernet peripheral" OFF)
 option(USE_5_DOF "Build for 5-DOF configuration" OFF)
+option(USE_3_DOF "Build for 3-DOF configuration" OFF)
 option(TARGET_NUCLEO "Targets the STM32H723 Nucleo development board" OFF)
 option(USE_CCACHE "Use ccache if available" ON)
 if(NOT DEFINED ENABLE_LTO)
@@ -50,6 +51,7 @@ endif()
 message(STATUS "Template project: CMAKE_CROSSCOMPILING = ${CMAKE_CROSSCOMPILING}")
 message(STATUS "Template project: USE_ETHERNET         = ${USE_ETHERNET}")
 message(STATUS "Template project: USE_5_DOF            = ${USE_5_DOF}")
+message(STATUS "Template project: USE_3_DOF            = ${USE_3_DOF}")
 message(STATUS "Template project: TARGET_NUCLEO        = ${TARGET_NUCLEO}")
 
 add_subdirectory(${STLIB_DIR})
@@ -127,7 +129,8 @@ if(CMAKE_CROSSCOMPILING)
     $<$<BOOL:${EXAMPLE_SELECTED}>:EXAMPLE_SELECTED>
     $<$<BOOL:${USE_ETHERNET}>:STLIB_ETH>
     $<$<BOOL:${USE_5_DOF}>:USE_5_DOF>
-    $<$<NOT:$<BOOL:${USE_5_DOF}>>:USE_1_DOF>
+    $<$<BOOL:${USE_3_DOF}>:USE_3_DOF>
+    $<$<AND:$<NOT:$<BOOL:${USE_5_DOF}>>,$<NOT:$<BOOL:${USE_3_DOF}>>>:USE_1_DOF>
     $<IF:$<BOOL:${TARGET_NUCLEO}>,NUCLEO,BOARD>
     $<IF:$<BOOL:${TARGET_NUCLEO}>,HSE_VALUE=8000000,HSE_VALUE=25000000>
   )

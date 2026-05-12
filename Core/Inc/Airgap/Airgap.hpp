@@ -37,7 +37,12 @@ public:
     }
 };
 
-template <typename... AirgapInstances> class AirgapArray {
+// Forward declaration
+template <typename AirgapTuple> class AirgapArray;
+
+// Partial specialization for tuple types
+template <typename... AirgapInstances>
+class AirgapArray<std::tuple<AirgapInstances...>> {
     static constexpr size_t AirgapCount = sizeof...(AirgapInstances);
 
     using AirgapPtrTuple = std::tuple<std::remove_reference_t<AirgapInstances>*...>;
@@ -45,8 +50,8 @@ template <typename... AirgapInstances> class AirgapArray {
     AirgapPtrTuple airgap_instances;
 
 public:
-    explicit AirgapArray(AirgapInstances&... instances)
-        : airgap_instances(std::make_tuple(&instances...)) {}
+    explicit AirgapArray(std::tuple<AirgapInstances...> _instances)
+        : airgap_instances(std::apply([](auto&... inst) { return std::make_tuple(&inst...); }, _instances)) {}
 
     void update() {
         std::apply([](auto*... instance) { (instance->update(), ...); }, airgap_instances);
@@ -57,10 +62,20 @@ public:
     }
 
     template <size_t Index> auto& get_airgap() { return *std::get<Index>(airgap_instances); }
+
+    auto get_readings() const {
+        return get_readings_impl(std::make_index_sequence<AirgapCount>{});
+    }
+
+private:
+    template <size_t... Is>
+    auto get_readings_impl(std::index_sequence<Is...>) const {
+        return std::array<float, AirgapCount>{std::get<Is>(airgap_instances)->airgap_v...};
+    }
 };
 
-// Deduction guide for direct construction from references.
+// Deduction guide for AirgapArray
 template <typename... AirgapInstances>
-AirgapArray(AirgapInstances&...) -> AirgapArray<AirgapInstances...>;
+AirgapArray(std::tuple<AirgapInstances...>) -> AirgapArray<std::tuple<AirgapInstances...>>;
 
 #endif // AIRGAP_HPP
