@@ -63,6 +63,7 @@ bool transition_levitating_to_idle() {
 void on_fault_enter() {
     LCU_Slave::slave_fault.turn_off();
     LCU_Slave::led_fault.turn_on();
+    LCU_Slave::led_operational.turn_off();
     Control::deinit();
     LCU_Slave::lpu_array.disable_all();
 }
@@ -142,6 +143,12 @@ void on_levitate_exit() {
 void update_sensors() {
     LCU_Slave::airgap_array.update();
     LCU_Slave::lpu_array.update_all();
+}
+
+void check_master_fault() {
+    if (LCU_Slave::master_fault.read() == GPIO_PinState::GPIO_PIN_RESET) {
+        FAULT("Master fault detected via GPIO");
+    }
 }
 
 void cyclic_levitate_control_current() {
@@ -258,7 +265,10 @@ void cyclic_levitate_control_distance() {
     }
 }
 
-void start() { Scheduler::register_task(100, update_sensors); }
+void start() {
+    Scheduler::register_task(100, update_sensors);
+    check_master_fault_id = Scheduler::register_task(10000, check_master_fault);
+}
 
 void update() {
     if (FaultController::is_faulted()) {
