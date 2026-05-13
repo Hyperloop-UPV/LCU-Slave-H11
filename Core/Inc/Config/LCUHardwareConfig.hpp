@@ -122,21 +122,6 @@ constexpr auto airgap_virtual_to_connector(uint8_t virtual_idx) {
     }
 }
 
-// TODO, this is not that relevant?
-// EN_BUFF virtual pair -> physical mapping
-// 1-DOF: virtual pair 0 -> physical 0 (en_buff_1)
-// 3-DOF: virtual pair 0..1 -> physical 0..1 (en_buff_1..2)
-// 5-DOF: virtual pair 0..4 -> physical 0..4 (en_buff_1..5)
-constexpr auto en_buff_virtual_to_physical(uint8_t virtual_idx) {
-    if constexpr (ACTIVE_DOF == DOFConfig::DOF_5) {
-        return virtual_idx;
-    } else if constexpr (ACTIVE_DOF == DOFConfig::DOF_3) {
-        return virtual_idx;
-    } else {
-        return virtual_idx;
-    }
-}
-
 } // namespace LCUConfig
 
 #endif // LCU_HARDWARE_CONFIG_HPP
