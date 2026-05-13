@@ -50,8 +50,8 @@ class AirgapArray<std::tuple<AirgapInstances...>> {
     AirgapPtrTuple airgap_instances;
 
 public:
-    explicit AirgapArray(std::tuple<AirgapInstances...> _instances)
-        : airgap_instances(std::apply([](auto&... inst) { return std::make_tuple(&inst...); }, _instances)) {}
+    explicit AirgapArray(std::tuple<AirgapInstances...>& instance_refs)
+        : airgap_instances(std::apply([](auto&... inst) { return std::make_tuple(&inst...); }, instance_refs)) {}
 
     void update() {
         std::apply([](auto*... instance) { (instance->update(), ...); }, airgap_instances);
@@ -76,6 +76,6 @@ private:
 
 // Deduction guide for AirgapArray
 template <typename... AirgapInstances>
-AirgapArray(std::tuple<AirgapInstances...>) -> AirgapArray<std::tuple<AirgapInstances...>>;
+AirgapArray(std::tuple<AirgapInstances...>&) -> AirgapArray<std::tuple<AirgapInstances...>>;
 
 #endif // AIRGAP_HPP

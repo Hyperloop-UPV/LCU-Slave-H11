@@ -150,9 +150,9 @@ class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
     bool all_ok = true;
 
 public:
-    LpuArray(std::tuple<LPUs...> _lpus, std::tuple<EnablePins...> _pins)
-        : lpus(std::apply([](auto&... lpu) { return std::make_tuple(&lpu...); }, _lpus)),
-          enable_pins(std::apply([](auto&... pin) { return std::make_tuple(&pin...); }, _pins)) {}
+    LpuArray(std::tuple<LPUs...>& lpu_refs, std::tuple<EnablePins...>& pin_refs)
+        : lpus(std::apply([](auto&... lpu) { return std::make_tuple(&lpu...); }, lpu_refs)),
+          enable_pins(std::apply([](auto&... pin) { return std::make_tuple(&pin...); }, pin_refs)) {}
 
     void init() {
         std::apply([](auto&... lpu) { (lpu->init(), ...); }, lpus);
@@ -207,7 +207,7 @@ private:
 
 // Deduction guide for LpuArray
 template <typename... LPUs, typename... EnablePins>
-LpuArray(std::tuple<LPUs...>, std::tuple<EnablePins...>)
+LpuArray(std::tuple<LPUs...>&, std::tuple<EnablePins...>&)
     -> LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>>;
 
 // Deduce PWM types while keeping the project-standard moving-average sizes.
