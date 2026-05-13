@@ -441,14 +441,16 @@ auto make_lpu_from_config() {
     );
 }
 
-// Stable LPU storage for the active index sequence
-template <typename Seq>
-struct LpuPack;
-
-template <size_t... Is>
-struct LpuPack<std::index_sequence<Is...>> {
-    inline static auto tuple = std::make_tuple(make_lpu_from_config<Is>()...);
+// Stable LPU storage per virtual index (never copied/moved).
+template <size_t VirtualIdx>
+struct LpuStorage {
+    inline static auto lpu = make_lpu_from_config<VirtualIdx>();
 };
+
+template <size_t VirtualIdx>
+auto& lpu_ref() {
+    return LpuStorage<VirtualIdx>::lpu;
+}
 
 // Helper to create a single Airgap from virtual index
 template <size_t VirtualIdx>
@@ -461,20 +463,32 @@ auto make_airgap_from_config() {
     );
 }
 
-// Stable Airgap storage for the active index sequence
-template <typename Seq>
-struct AirgapPack;
-
-template <size_t... Is>
-struct AirgapPack<std::index_sequence<Is...>> {
-    inline static auto tuple = std::make_tuple(make_airgap_from_config<Is>()...);
+// Stable Airgap storage per virtual index (never copied/moved).
+template <size_t VirtualIdx>
+struct AirgapStorage {
+    inline static auto airgap = make_airgap_from_config<VirtualIdx>();
 };
+
+template <size_t VirtualIdx>
+auto& airgap_ref() {
+    return AirgapStorage<VirtualIdx>::airgap;
+}
 
 // Generate LPU tuple via pack expansion
 using LpuSeq = std::make_index_sequence<LCUConfig::ACTIVE_LPU_COUNT>;
 
+template <size_t... Is>
+auto make_lpu_tuple(std::index_sequence<Is...>) {
+    return std::forward_as_tuple(lpu_ref<Is>()...);
+}
+
 // Generate Airgap tuple via pack expansion
 using AirgapSeq = std::make_index_sequence<LCUConfig::ACTIVE_AIRGAP_COUNT>;
+
+template <size_t... Is>
+auto make_airgap_tuple(std::index_sequence<Is...>) {
+    return std::forward_as_tuple(airgap_ref<Is>()...);
+}
 
 // Generate en_buff tuple for active count
 template <size_t... Is>
@@ -483,12 +497,12 @@ auto make_en_buff_tuple(std::index_sequence<Is...>) {
 }
 
 // LPU setup: creates only active LPUs using pack expansion
-inline auto& lpu_tuple = LpuPack<LpuSeq>::tuple;
+inline auto lpu_tuple = make_lpu_tuple(LpuSeq{});
 inline auto en_buff_tuple = make_en_buff_tuple(std::make_index_sequence<LCUConfig::ACTIVE_EN_BUFF_COUNT>{});
 inline auto lpu_array = LpuArray(lpu_tuple, en_buff_tuple);
 
 // Airgap setup: creates only active airgaps using pack expansion
-inline auto& airgap_tuple = AirgapPack<AirgapSeq>::tuple;
+inline auto airgap_tuple = make_airgap_tuple(AirgapSeq{});
 inline auto airgap_array = AirgapArray(airgap_tuple);
 
 template <size_t VirtualIdx>
@@ -506,13 +520,10 @@ consteval auto lpu_overcurrent_name() {
 }
 
 template <size_t VirtualIdx>
-inline auto& shunt_ref = std::get<VirtualIdx>(lpu_tuple).shunt_v;
-
-template <size_t VirtualIdx>
 consteval auto make_lpu_protection() {
     return Protections::protection<
         lpu_overcurrent_name<VirtualIdx>(),
-        shunt_ref<VirtualIdx>
+        LpuStorage<VirtualIdx>::lpu.shunt_v
     >(Protections::Rules::range(-60.0f, 60.0f));
 }
 

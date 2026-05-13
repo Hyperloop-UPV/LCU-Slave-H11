@@ -28,8 +28,38 @@ void init() {
     LCU_SM::set_command_packet(&Communications::comms.command_packet);
     LCU_SM::start();
 
-    // TODO: Frame init needs to be count-aware
-    // Frame::init(...)
+    Frame::init(
+        Communications::comms,
+        std::get<0>(lpu_tuple),
+        std::get<1>(lpu_tuple),
+        std::get<2>(lpu_tuple),
+        std::get<3>(lpu_tuple),
+        std::get<0>(lpu_tuple),
+        std::get<0>(lpu_tuple),
+        std::get<0>(lpu_tuple),
+        std::get<0>(lpu_tuple),
+        std::get<0>(lpu_tuple),
+        std::get<0>(lpu_tuple),
+        std::get<0>(airgap_tuple),
+        std::get<1>(airgap_tuple),
+        std::get<2>(airgap_tuple),
+        std::get<3>(airgap_tuple),
+        std::get<0>(airgap_tuple),
+        std::get<0>(airgap_tuple),
+        std::get<0>(airgap_tuple),
+        std::get<0>(airgap_tuple),
+        Communications::comms,
+        std::get<0>(lpu_tuple),
+        std::get<1>(lpu_tuple),
+        std::get<2>(lpu_tuple),
+        std::get<3>(lpu_tuple),
+        std::get<0>(lpu_tuple),
+        std::get<0>(lpu_tuple),
+        std::get<0>(lpu_tuple),
+        std::get<0>(lpu_tuple),
+        std::get<0>(lpu_tuple),
+        std::get<0>(lpu_tuple)
+    );
 }
 
 void update() {
