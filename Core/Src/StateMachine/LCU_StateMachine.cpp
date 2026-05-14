@@ -3,6 +3,23 @@
 
 namespace LCU_SM {
 
+// Track previous desired state to detect changes
+inline DesiredState previous_desired_state = DesiredState::IDLE;
+
+// Temporary helper: infer DesiredState from current command_packet flags
+// Priority: LEVITATE > CURRENT_CONTROL > IDLE
+// (DEBUG will be added when communications are refactored)
+DesiredState infer_desired_state() {
+    auto flags = command_packet->flags;
+    if (bool(flags & CommandFlags::LEVITATE)) {
+        return DesiredState::LEVITATION;
+    }
+    if (bool(flags & CommandFlags::CURRENT_CONTROL)) {
+        return DesiredState::CURRENT_CONTROL;
+    }
+    return DesiredState::IDLE;
+}
+
 bool request_global_fault_if_needed() {
     static bool reported = false;
 
@@ -46,41 +63,48 @@ bool transition_connecting_to_idle() {
 #endif
 }
 
-bool transition_idle_to_levitating() {
-    auto cmds = command_packet->flags;
-    return bool(cmds & CommandFlags::LEVITATE) || bool(cmds & CommandFlags::CURRENT_CONTROL);
+bool transition_idle_to_levitation() {
+    return infer_desired_state() == DesiredState::LEVITATION;
 }
 
-bool transition_levitating_to_idle() {
-    auto cmds = command_packet->flags;
-    bool stop_requested =
-        !bool(cmds & CommandFlags::LEVITATE) && !bool(cmds & CommandFlags::CURRENT_CONTROL);
-    return stop_requested;
+bool transition_idle_to_current_control() {
+    return infer_desired_state() == DesiredState::CURRENT_CONTROL;
+}
+
+bool transition_idle_to_debug() {
+    return infer_desired_state() == DesiredState::DEBUG;
+}
+
+bool transition_levitation_to_idle() {
+    return infer_desired_state() != DesiredState::LEVITATION;
+}
+
+bool transition_current_control_to_idle() {
+    return infer_desired_state() != DesiredState::CURRENT_CONTROL;
+}
+
+bool transition_debug_to_idle() {
+    return infer_desired_state() != DesiredState::DEBUG;
 }
 
 void on_fault_enter() {
+    LCU_Slave::lpu_array.disable_all();
     LCU_Slave::slave_fault.turn_off();
     LCU_Slave::led_fault.turn_on();
     LCU_Slave::led_operational.turn_off();
     Control::deinit();
-    LCU_Slave::lpu_array.disable_all();
+    Scheduler::unregister_task(check_master_fault_id);
 }
 
-void on_levitate_enter() {
-    LCU_Slave::led_operational.turn_on();
-    Control::init();
-    LCU_Slave::lpu_array.enable_all();
-}
-
-void on_levitate_exit() {
+void on_idle_enter() {
     LCU_Slave::led_operational.turn_off();
     Control::deinit();
     LCU_Slave::lpu_array.disable_all();
 
-        status_packet->desired_current1 = 0.0f;
-        status_packet->desired_current2 = 0.0f;
-        status_packet->desired_current3 = 0.0f;
-        status_packet->desired_current4 = 0.0f;
+    status_packet->desired_current1 = 0.0f;
+    status_packet->desired_current2 = 0.0f;
+    status_packet->desired_current3 = 0.0f;
+    status_packet->desired_current4 = 0.0f;
 
     status_packet->state0 = 0.0f;
     status_packet->state1 = 0.0f;
@@ -138,6 +162,40 @@ void on_levitate_exit() {
     status_packet->Bk[2] = 0.0f;
 }
 
+void on_levitation_enter() {
+    LCU_Slave::led_operational.turn_on();
+    Control::init();
+    LCU_Slave::lpu_array.enable_all();
+}
+
+void on_levitation_exit() {
+    LCU_Slave::led_operational.turn_off();
+    Control::deinit();
+    LCU_Slave::lpu_array.disable_all();
+}
+
+void on_current_control_enter() {
+    LCU_Slave::led_operational.turn_on();
+    Control::init();
+    LCU_Slave::lpu_array.enable_all();
+}
+
+void on_current_control_exit() {
+    LCU_Slave::led_operational.turn_off();
+    Control::deinit();
+    LCU_Slave::lpu_array.disable_all();
+}
+
+void on_debug_enter() {
+    LCU_Slave::led_operational.turn_on();
+    LCU_Slave::lpu_array.enable_all();
+}
+
+void on_debug_exit() {
+    LCU_Slave::led_operational.turn_off();
+    LCU_Slave::lpu_array.disable_all();
+}
+
 void update_sensors() {
     LCU_Slave::airgap_array.update();
     LCU_Slave::lpu_array.update_all();
@@ -146,38 +204,48 @@ void update_sensors() {
 void check_master_fault() {
     if (LCU_Slave::master_fault.read() == GPIO_PinState::GPIO_PIN_RESET) {
         FAULT("Master fault detected via GPIO");
+        return;
+    }
+    if (infer_desired_state() == DesiredState::FAULT) {
+        FAULT("Master Fault detected via SPI");
+        return;
     }
 }
 
-void cyclic_levitate_control_current() {
-    bool levitate_active = bool(command_packet->flags & CommandFlags::LEVITATE);
-    bool direct_current_control = bool(command_packet->flags & CommandFlags::CURRENT_CONTROL);
-    auto control_output = Control::current_update(
-        {LCU_Slave::lpu_array.get_lpu<0>().shunt_v,
-         LCU_Slave::lpu_array.get_lpu<1>().shunt_v,
-         LCU_Slave::lpu_array.get_lpu<2>().shunt_v,
-         LCU_Slave::lpu_array.get_lpu<3>().shunt_v},
-        direct_current_control
-            ? std::optional<float>(command_packet->current_control.desired_current)
-            : std::nullopt
+void cyclic_levitation_control_current() {
+    auto shunt_readings = LCU_Slave::lpu_array.get_shunt_readings();
+    auto control_output = Control::current_update(shunt_readings);
+    LCU_Slave::lpu_array.set_out_voltages(control_output);
+
+    update_status_packet_with_control_output();
+}
+
+void cyclic_levitation_control_distance() {
+    auto input_airgaps = LCU_Slave::airgap_array.get_readings();
+
+    Control::levitation_update(
+        input_airgaps,
+        command_packet->levitate.desired_distance,
+        command_packet->levitate.ramping
     );
-    uint16_t current_mask = command_packet->current_control.lpu_id_bitmask;
-    bool apply_to_all_for_levitation = levitate_active;
+}
 
-    // 5-DOF: Apply to all 10 LPUs as specified in bitmask
-    if (apply_to_all_for_levitation || (current_mask & (1 << 0))) {
-        LCU_Slave::lpu_array.get_lpu<0>().set_out_voltage(control_output[0]);
-    }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 1))) {
-        LCU_Slave::lpu_array.get_lpu<1>().set_out_voltage(control_output[1]);
-    }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 2))) {
-        LCU_Slave::lpu_array.get_lpu<2>().set_out_voltage(control_output[2]);
-    }
-    if (apply_to_all_for_levitation || (current_mask & (1 << 3))) {
-        LCU_Slave::lpu_array.get_lpu<3>().set_out_voltage(control_output[3]);
-    }
+void cyclic_current_control_current() {
+    auto shunt_readings = LCU_Slave::lpu_array.get_shunt_readings();
+    auto control_output = Control::current_update(
+        shunt_readings,
+        command_packet->current_control.desired_current
+    );
+    LCU_Slave::lpu_array.set_out_voltages(control_output);
 
+    update_status_packet_with_control_output();
+}
+
+void cyclic_debug_fixed_pwm() {
+    LCU_Slave::lpu_array.update_all();
+}
+
+void update_status_packet_with_control_output() {
     status_packet->desired_current1 = Control::output.CorrienteReferencia[0];
     status_packet->desired_current2 = Control::output.CorrienteReferencia[1];
     status_packet->desired_current3 = Control::output.CorrienteReferencia[2];
@@ -240,20 +308,6 @@ void cyclic_levitate_control_current() {
     status_packet->Bk[2] = Control::output.Bk[2];
 }
 
-void cyclic_levitate_control_distance() {
-    bool levitate_active = bool(command_packet->flags & CommandFlags::LEVITATE);
-    bool direct_current_control = bool(command_packet->flags & CommandFlags::CURRENT_CONTROL);
-    if (levitate_active && !direct_current_control) {
-        auto input_airgaps = LCU_Slave::airgap_array.get_readings();
-
-        Control::levitation_update(
-            input_airgaps,
-            command_packet->levitate.desired_distance,
-            command_packet->levitate.ramping
-        );
-    }
-}
-
 void start() {
     Scheduler::register_task(100, update_sensors);
     check_master_fault_id = Scheduler::register_task(10000, check_master_fault);
@@ -261,20 +315,14 @@ void start() {
 
 void update() {
     if (FaultController::is_faulted()) {
+        status_packet->slave_state = SlaveState::FAULT;
         return;
+    } else {
+        status_packet->slave_state = sm_operational.get_current_state();
     }
 
     if (request_global_fault_if_needed()) {
         return;
-    }
-
-    status_packet->slave_state = sm_operational.get_current_state();
-
-    auto cmds = command_packet->flags;
-    if (bool(cmds & CommandFlags::ENABLE_LPU_BUFFER)) {
-        LCU_Slave::lpu_array.enable_all();
-    } else if (sm_operational.get_current_state() != SlaveState::LEVITATING) {
-        LCU_Slave::lpu_array.disable_all();
     }
 }
 
