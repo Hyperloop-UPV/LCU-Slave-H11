@@ -213,10 +213,10 @@ void cyclic_levitate_control_current() {
     status_packet->Fe[0] = Control::output.Fe[0];
     status_packet->Fe[1] = Control::output.Fe[1];
     status_packet->Fe[2] = Control::output.Fe[2];
-    status_packet->Fa[0] = Control::output.Fa[0];
-    status_packet->Fa[1] = Control::output.Fa[1];
-    status_packet->Fa[2] = Control::output.Fa[2];
-    status_packet->Fa[3] = Control::output.Fa[3];
+    status_packet->Fa[0] = Control::output.Fa;
+    status_packet->Fa[1] = Control::output.Fa;
+    status_packet->Fa[2] = Control::output.Fa;
+    status_packet->Fa[3] = Control::output.Fa;
     status_packet->Ef[0] = Control::output.Ef[0];
     status_packet->Ef[1] = Control::output.Ef[1];
     status_packet->Ef[2] = Control::output.Ef[2];
@@ -229,9 +229,9 @@ void cyclic_levitate_control_current() {
     status_packet->Zz[0] = Control::output.Zz[0];
     status_packet->Zz[1] = Control::output.Zz[1];
     status_packet->Zz[2] = Control::output.Zz[2];
-    status_packet->Fe_L[0] = Control::output.Fe_L[0];
-    status_packet->Fe_L[1] = Control::output.Fe_L[1];
-    status_packet->Fe_L[2] = Control::output.Fe_L[2];
+    status_packet->Fe_L[0] = Control::output.Fe_L;
+    status_packet->Fe_L[1] = Control::output.Fe_L;
+    status_packet->Fe_L[2] = Control::output.Fe_L;
     status_packet->A[0] = Control::output.A[0];
     status_packet->A[1] = Control::output.A[1];
     status_packet->A[2] = Control::output.A[2];

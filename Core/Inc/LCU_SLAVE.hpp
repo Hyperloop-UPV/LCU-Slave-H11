@@ -423,8 +423,8 @@ inline auto lpu2 = make_lpu<2, 1>(
     0.0f,
     1.0f,
     // 310.3f, -181.0f // Characterized for LPU2
-    304.1f,
-    -177.5f // Characterized for LPU3
+    // 304.1f, -177.5f // Characterized for LPU3
+    331.5f, -193.5f // Characterized for LPU12
 );
 inline auto lpu5 =
     make_lpu<2, 1>(pwm_positive_5, pwm_negative_5, adc_vbat_5, adc_shunt_5, 0.0f, 1.0f, 0.0f, 1.0f);
