@@ -1,6 +1,7 @@
-# Template Project
+# LCU Slave
 
-HyperloopUPV STM32 firmware template based on CMake + VSCode, using `deps/ST-LIB`.
+Based on HyperloopUPV STM32 firmware template based on CMake + VSCode, using `deps/ST-LIB`.
+The main documentation for this board is available at[`docs/`](docs/README.md).
 
 ## Quickstart
 
