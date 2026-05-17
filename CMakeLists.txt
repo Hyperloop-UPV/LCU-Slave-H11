@@ -12,8 +12,6 @@ set(SHARED_DIR  ${CMAKE_CURRENT_LIST_DIR}/deps/LCU-Shared-H11)
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
-set(GENERATOR_SCRIPT "${CMAKE_SOURCE_DIR}/Core/Inc/Code_generation/Generator.py")
-
 if(CMAKE_HOST_WIN32)
   set(VENV_PYTHON ${CMAKE_SOURCE_DIR}/virtual/Scripts/python)
 else()
@@ -154,7 +152,6 @@ if(CMAKE_CROSSCOMPILING)
     $<$<COMPILE_LANGUAGE:CXX>:-Wall>
     # $<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>
     $<$<COMPILE_LANGUAGE:CXX>:-Werror>
-    $<$<COMPILE_LANGUAGE:CXX>:-Wno-error=volatile>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-use-cxa-atexit>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
   )
