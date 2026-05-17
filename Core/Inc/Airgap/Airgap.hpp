@@ -23,58 +23,31 @@ public:
                                ) {}
 
     void update() { airgap_sensor.read(); }
-
-    void zeroing() {
-        double airgap_sum = 0.0;
-        constexpr size_t sample_count = 1000;
-
-        for (std::size_t i = 0; i < sample_count; i++) {
-            airgap_sensor.read();
-            airgap_sum += airgap_v;
-        }
-
-        airgap_sensor.set_offset(airgap_sum / sample_count);
-    }
 };
 
-// Forward declaration
 template <typename AirgapTuple> class AirgapArray;
 
-// Partial specialization for tuple types
 template <typename... AirgapInstances>
-class AirgapArray<std::tuple<AirgapInstances...>> {
-    static constexpr size_t AirgapCount = sizeof...(AirgapInstances);
-
-    using AirgapPtrTuple = std::tuple<std::remove_reference_t<AirgapInstances>*...>;
-
-    AirgapPtrTuple airgap_instances;
-
+class AirgapArray<std::tuple<AirgapInstances...>>
+    : public AirgapArrayBase<std::tuple<AirgapInstances...>> {
 public:
     explicit AirgapArray(std::tuple<AirgapInstances...>& instance_refs)
-        : airgap_instances(std::apply([](auto&... inst) { return std::make_tuple(&inst...); }, instance_refs)) {}
+        : AirgapArrayBase<std::tuple<AirgapInstances...>>(instance_refs) {}
 
     void update() {
-        std::apply([](auto*... instance) { (instance->update(), ...); }, airgap_instances);
+        std::apply([](auto&... instance) { (instance.update(), ...); }, this->airgaps);
     }
-
-    void zeroing() {
-        std::apply([](auto*... instance) { (instance->zeroing(), ...); }, airgap_instances);
-    }
-
-    template <size_t Index> auto& get_airgap() { return *std::get<Index>(airgap_instances); }
 
     auto get_readings() const {
-        return get_readings_impl(std::make_index_sequence<AirgapCount>{});
-    }
-
-private:
-    template <size_t... Is>
-    auto get_readings_impl(std::index_sequence<Is...>) const {
-        return std::array<float, AirgapCount>{std::get<Is>(airgap_instances)->airgap_v...};
+        return std::apply(
+            [this](auto&... instance) {
+                return std::array<float, this->count>{instance.airgap_v...};
+            },
+            this->airgaps
+        );
     }
 };
 
-// Deduction guide for AirgapArray
 template <typename... AirgapInstances>
 AirgapArray(std::tuple<AirgapInstances...>&) -> AirgapArray<std::tuple<AirgapInstances...>>;
 

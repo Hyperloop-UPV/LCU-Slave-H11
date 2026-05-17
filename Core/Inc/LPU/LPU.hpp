@@ -14,9 +14,6 @@ template <
     typename PWMPositive,
     typename PWMNegative>
 class LPU : public LPUBase {
-
-    bool was_fixed_duty_cycle = false; // Temporal fix
-
 public:
     LPU(PWMPositive& pwm_positive,
         PWMNegative& pwm_negative,
@@ -32,46 +29,35 @@ public:
           shunt_sensor(adc_shunt_instance, shunt_slope, shunt_offset, &shunt_v, shunt_moving_avg) {}
 
     void init() {
-        pwm_positive.turn_on();
-        pwm_negative.turn_on();
+        pwm_positive.set_timer_frequency(20'000);
+        pwm_negative.set_timer_frequency(20'000);
     }
 
-    bool update() {
+    void update() {
         if (is_fixed_vbat) {
             vbat_v = fixed_vbat;
         } else {
             vbat_sensor.read();
         }
         shunt_sensor.read();
-
-        if (is_fixed_duty_cycle) {
-            set_duty(fixed_duty_cycle);
-            was_fixed_duty_cycle = true;
-        } else if (was_fixed_duty_cycle) {
-            set_duty(0.0f);
-            was_fixed_duty_cycle = false;
-        }
-
-        return true;
     }
 
     /**
      * @brief Set the duty cycle based on the desired output voltage and the current battery voltage
      */
-    bool set_out_voltage(float voltage) {
-        if (is_fixed_duty_cycle) {
-            return true;
-        }
+    void set_out_voltage(float voltage) {
         // Avoid division by zero
         if (vbat_v < 5.0f) {
             set_duty(0.0f);
-            return false;
+            WARNING(
+                "Battery voltage too low (%.2f V) for reliable operation. Output disabled.",
+                vbat_v
+            );
         }
 
         float duty = voltage / vbat_v * 100.0f;
         duty = std::clamp(duty, -100.0f, 100.0f);
         set_duty(duty);
-        return true;
     }
 
     void set_duty(float duty) {
@@ -85,42 +71,15 @@ public:
         duty_cycle = duty;
     }
 
-    bool enable() {
-#ifdef USE_LPU_READY
-        if (!ready)
-            return false;
-#endif
-#ifdef USE_LPU_FAULT
-        if (fault)
-            return false;
-#endif
-        is_enabled = true;
-        return true;
-    }
-
-    bool disable() {
-        if (is_fixed_duty_cycle) {
-            return false;
-        }
-        is_enabled = false;
+    void disable() {
         set_duty(0.0f);
-        return true;
+        pwm_negative.turn_off();
+        pwm_positive.turn_off();
     }
 
-    void zeroing() {
-        double vbat_sum = 0.0;
-        double shunt_sum = 0.0;
-        constexpr size_t sample_count = 1000;
-
-        for (std::size_t i = 0; i < sample_count; i++) {
-            vbat_sensor.read();
-            shunt_sensor.read();
-            vbat_sum += vbat_v;
-            shunt_sum += shunt_v;
-        }
-
-        vbat_sensor.set_offset(vbat_sum / sample_count);
-        shunt_sensor.set_offset(shunt_sum / sample_count);
+    void enable() {
+        pwm_positive.turn_on();
+        pwm_negative.turn_on();
     }
 
 private:
@@ -133,84 +92,59 @@ private:
     FilteredLinearSensor<volatile float, ShuntMovingAverageSize> shunt_sensor;
 };
 
-// Forward declaration
 template <typename LPUTuple, typename EnablePinTuple> class LpuArray;
 
-// Partial specialization for tuple types
 template <typename... LPUs, typename... EnablePins>
-class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>> {
-    static constexpr size_t LpuCount = sizeof...(LPUs);
-
-    using LPUPtrTuple = std::tuple<std::remove_reference_t<LPUs>*...>;
-    using PinPtrTuple = std::tuple<std::remove_reference_t<EnablePins>*...>;
-
-    LPUPtrTuple lpus;
-    PinPtrTuple enable_pins;
-
-    bool all_ok = true;
+class LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>>
+    : public LpuArrayBase<std::tuple<LPUs...>> {
+    std::tuple<EnablePins...>& enable_pins;
+    static constexpr auto LpuCount = sizeof...(LPUs);
 
 public:
     LpuArray(std::tuple<LPUs...>& lpu_refs, std::tuple<EnablePins...>& pin_refs)
-        : lpus(std::apply([](auto&... lpu) { return std::make_tuple(&lpu...); }, lpu_refs)),
-          enable_pins(std::apply([](auto&... pin) { return std::make_tuple(&pin...); }, pin_refs)) {}
+        : LpuArrayBase<std::tuple<LPUs...>>(lpu_refs), enable_pins(pin_refs) {}
 
     void init() {
-        std::apply([](auto&... lpu) { (lpu->init(), ...); }, lpus);
+        std::apply([](auto&... lpu) { (lpu.init(), ...); }, this->lpus);
         disable_all();
     }
 
     void enable_all() {
-        std::apply([](auto&... pin) { (pin->turn_off(), ...); }, enable_pins);
-        std::apply([](auto*... lpu) { (lpu->enable(), ...); }, lpus);
+        std::apply([](auto&... pin) { (pin.turn_off(), ...); }, this->enable_pins);
+        std::apply([](auto&... lpu) { (lpu.enable(), ...); }, this->lpus);
     }
 
     void disable_all() {
-        std::apply([](auto&... pin) { (pin->turn_on(), ...); }, enable_pins);
-        std::apply([](auto*... lpu) { (lpu->disable(), ...); }, lpus);
+        std::apply([](auto&... pin) { (pin.turn_on(), ...); }, this->enable_pins);
+        std::apply([](auto&... lpu) { (lpu.disable(), ...); }, this->lpus);
     }
 
-    void zeroing_all() {
-        std::apply([](auto*... lpu) { (lpu->zeroing(), ...); }, lpus);
+    void update_all() {
+        std::apply([&](auto&... lpu) { ((lpu.update()), ...); }, this->lpus);
     }
 
-    bool update_all() {
-        all_ok = true;
-        std::apply([&](auto&... lpu) { ((all_ok &= lpu->update()), ...); }, lpus);
-        return all_ok;
-    }
-
-    bool is_all_ok() { return all_ok; }
-
-    template <size_t Index> auto& get_lpu() { return *std::get<Index>(lpus); }
-
-    // Returns array of all shunt readings
     auto get_shunt_readings() const {
-        return get_shunt_readings_impl(std::make_index_sequence<LpuCount>{});
+        return std::apply(
+            [](auto&... lpu) { return std::array<float, LpuCount>{lpu.shunt_v...}; },
+            this->lpus
+        );
     }
 
-    // Sets voltages for all LPUs from an array
     void set_out_voltages(const std::array<float, LpuCount>& voltages) {
-        set_voltages_impl(voltages, std::make_index_sequence<LpuCount>{});
-    }
-
-private:
-    template <size_t... Is>
-    auto get_shunt_readings_impl(std::index_sequence<Is...>) const {
-        return std::array<float, LpuCount>{std::get<Is>(lpus)->shunt_v...};
-    }
-
-    template <size_t... Is>
-    void set_voltages_impl(const std::array<float, LpuCount>& voltages, std::index_sequence<Is...>) {
-        (std::get<Is>(lpus)->set_out_voltage(voltages[Is]), ...);
+        std::apply(
+            [&](auto&... lpu) {
+                size_t idx = 0;
+                ((lpu.set_out_voltage(voltages[idx++])), ...);
+            },
+            this->lpus
+        );
     }
 };
 
-// Deduction guide for LpuArray
 template <typename... LPUs, typename... EnablePins>
 LpuArray(std::tuple<LPUs...>&, std::tuple<EnablePins...>&)
     -> LpuArray<std::tuple<LPUs...>, std::tuple<EnablePins...>>;
 
-// Deduce PWM types while keeping the project-standard moving-average sizes.
 template <
     uint32_t ShuntMovingAverageSize,
     uint32_t VbatMovingAverageSize,

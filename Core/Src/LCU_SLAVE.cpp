@@ -10,55 +10,20 @@ void init() {
     spi.set_software_nss(false);
     slave_ready.turn_off();
 
-    timer15.set_pwm_frequency(20'000);
-    timer3.set_pwm_frequency(20'000);
-    timer8.set_pwm_frequency(20'000);
-    timer4.set_pwm_frequency(20'000);
-    timer17.set_pwm_frequency(20'000);
-    timer16.set_pwm_frequency(20'000);
-    timer12.set_pwm_frequency(20'000);
-    timer1.set_pwm_frequency(20'000);
-
     lpu_array.init();
 
     MDMA::start();
 
     Communications::init();
 
-    LCU_SM::set_command_packet(&Communications::comms.command_packet);
     LCU_SM::start();
 
     Frame::init(
-        Communications::comms,
-        std::get<0>(lpu_tuple),
-        std::get<1>(lpu_tuple),
-        std::get<2>(lpu_tuple),
-        std::get<3>(lpu_tuple),
-        std::get<0>(lpu_tuple),
-        std::get<0>(lpu_tuple),
-        std::get<0>(lpu_tuple),
-        std::get<0>(lpu_tuple),
-        std::get<0>(lpu_tuple),
-        std::get<0>(lpu_tuple),
-        std::get<0>(airgap_tuple),
-        std::get<1>(airgap_tuple),
-        std::get<2>(airgap_tuple),
-        std::get<3>(airgap_tuple),
-        std::get<0>(airgap_tuple),
-        std::get<0>(airgap_tuple),
-        std::get<0>(airgap_tuple),
-        std::get<0>(airgap_tuple),
-        Communications::comms,
-        std::get<0>(lpu_tuple),
-        std::get<1>(lpu_tuple),
-        std::get<2>(lpu_tuple),
-        std::get<3>(lpu_tuple),
-        std::get<0>(lpu_tuple),
-        std::get<0>(lpu_tuple),
-        std::get<0>(lpu_tuple),
-        std::get<0>(lpu_tuple),
-        std::get<0>(lpu_tuple),
-        std::get<0>(lpu_tuple)
+        lpu_array,
+        airgap_array,
+        LCU_SM::state_machine,
+        Control::control,
+        Communications::report
     );
 }
 

@@ -17,10 +17,8 @@ namespace LCU_Slave {
 void init();
 void update();
 
-#ifdef USE_SPI_ERROR
-constexpr uint32_t MAX_SPI_ERRORS = 10;
-constexpr uint32_t SPI_TIMEOUT_LIMIT = 1000;
-#endif
+constexpr uint32_t MAX_SPI_ERRORS = 0;
+constexpr uint32_t SPI_TIMEOUT_LIMIT = 0;
 
 inline constexpr auto led_operational_req =
     ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_operational);
@@ -35,6 +33,7 @@ inline constexpr auto master_fault_req = ST_LIB::EXTIDomain::Device(
     []() {
         master_fault_triggered = true;
         reset_counter++;
+        FAULT("Master fault detected via EXTI");
     }
 );
 inline constexpr auto slave_fault_req =
@@ -229,8 +228,6 @@ inline constexpr auto spi_req = ST_LIB::SPIDomain::
     );
 inline constexpr auto slave_ready_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::spi_nss);
 
-using Frame = SystemFrame<false>; // false for Slave
-
 using BoardPolicy = ST_LIB::FaultPolicy<LCU_SM::sm_operational, LCU_SM::on_fault_enter>;
 
 using Board = ST_LIB::Board<
@@ -281,8 +278,7 @@ using Board = ST_LIB::Board<
     adc_airgap_5_req,
     adc_airgap_6_req,
     adc_airgap_7_req,
-    adc_airgap_8_req
-    >;
+    adc_airgap_8_req>;
 
 inline constexpr auto& led_operational = Board::instance_of<led_operational_req>();
 inline constexpr auto& led_fault = Board::instance_of<led_fault_req>();
@@ -366,61 +362,96 @@ inline constexpr auto& adc_airgap_8 = Board::instance_of<adc_airgap_8_req>();
 
 // PWM pairs tuple (connector index 0..9)
 inline auto all_pwm_positive = std::make_tuple(
-    &pwm_positive_1, &pwm_positive_2, &pwm_positive_3, &pwm_positive_4,
-    &pwm_positive_5, &pwm_positive_6, &pwm_positive_7, &pwm_positive_8,
-    &pwm_positive_9, &pwm_positive_10
+    &pwm_positive_1,
+    &pwm_positive_2,
+    &pwm_positive_3,
+    &pwm_positive_4,
+    &pwm_positive_5,
+    &pwm_positive_6,
+    &pwm_positive_7,
+    &pwm_positive_8,
+    &pwm_positive_9,
+    &pwm_positive_10
 );
 inline auto all_pwm_negative = std::make_tuple(
-    &pwm_negative_1, &pwm_negative_2, &pwm_negative_3, &pwm_negative_4,
-    &pwm_negative_5, &pwm_negative_6, &pwm_negative_7, &pwm_negative_8,
-    &pwm_negative_9, &pwm_negative_10
+    &pwm_negative_1,
+    &pwm_negative_2,
+    &pwm_negative_3,
+    &pwm_negative_4,
+    &pwm_negative_5,
+    &pwm_negative_6,
+    &pwm_negative_7,
+    &pwm_negative_8,
+    &pwm_negative_9,
+    &pwm_negative_10
 );
 
 // ADC tuples (connector index 0..9 for vbat/shunt, 0..7 for airgap)
 inline auto all_adc_vbat = std::make_tuple(
-    &adc_vbat_1, &adc_vbat_2, &adc_vbat_3, &adc_vbat_4, &adc_vbat_5,
-    &adc_vbat_6, &adc_vbat_7, &adc_vbat_8, &adc_vbat_9, &adc_vbat_10
+    &adc_vbat_1,
+    &adc_vbat_2,
+    &adc_vbat_3,
+    &adc_vbat_4,
+    &adc_vbat_5,
+    &adc_vbat_6,
+    &adc_vbat_7,
+    &adc_vbat_8,
+    &adc_vbat_9,
+    &adc_vbat_10
 );
 inline auto all_adc_shunt = std::make_tuple(
-    &adc_shunt_1, &adc_shunt_2, &adc_shunt_3, &adc_shunt_4, &adc_shunt_5,
-    &adc_shunt_6, &adc_shunt_7, &adc_shunt_8, &adc_shunt_9, &adc_shunt_10
+    &adc_shunt_1,
+    &adc_shunt_2,
+    &adc_shunt_3,
+    &adc_shunt_4,
+    &adc_shunt_5,
+    &adc_shunt_6,
+    &adc_shunt_7,
+    &adc_shunt_8,
+    &adc_shunt_9,
+    &adc_shunt_10
 );
 inline auto all_adc_airgap = std::make_tuple(
-    &adc_airgap_1, &adc_airgap_2, &adc_airgap_3, &adc_airgap_4,
-    &adc_airgap_5, &adc_airgap_6, &adc_airgap_7, &adc_airgap_8
+    &adc_airgap_1,
+    &adc_airgap_2,
+    &adc_airgap_3,
+    &adc_airgap_4,
+    &adc_airgap_5,
+    &adc_airgap_6,
+    &adc_airgap_7,
+    &adc_airgap_8
 );
 
 // EN_BUFF tuple (connector index 0..4)
-inline auto all_en_buff = std::make_tuple(
-    &en_buff_1, &en_buff_2, &en_buff_3, &en_buff_4, &en_buff_5
-);
+inline auto all_en_buff =
+    std::make_tuple(&en_buff_1, &en_buff_2, &en_buff_3, &en_buff_4, &en_buff_5);
 
 // LPU characterization parameters (connector index 0..9)
 // {vbat_offset, vbat_slope, shunt_offset, shunt_slope}
 constexpr std::array<std::array<float, 4>, 10> lpu_params = {{
-    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 0 (lpu)
-    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 1 (lpu)
-    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 2 (lpu)
-    {0.0f, 1.0f, 304.1f, -177.5f},  // connector 3 (lpu3)
-    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 4 (lpu)
-    {0.0f, 1.0f, 317.0f, -184.8f},  // connector 5 (lpu7)
-    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 6 (lpu)
-    {0.0f, 1.0f, 329.0f, -193.4f},  // connector 7 (lpu4)
-    {0.0f, 1.0f, 0.0f, 1.0f},       // connector 8 (lpu)
-    {0.0f, 1.0f, 317.0f, -185.1f},  // connector 9 (lpu1)
+    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 0 (lpu)
+    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 1 (lpu)
+    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 2 (lpu)
+    {0.0f, 1.0f, 304.1f, -177.5f}, // connector 3 (lpu3)
+    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 4 (lpu)
+    {0.0f, 1.0f, 317.0f, -184.8f}, // connector 5 (lpu7)
+    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 6 (lpu)
+    {0.0f, 1.0f, 329.0f, -193.4f}, // connector 7 (lpu4)
+    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 8 (lpu)
+    {0.0f, 1.0f, 317.0f, -185.1f}, // connector 9 (lpu1)
 }};
 
 // Airgap characterization parameters (connector index 0..7)
 // {offset, slope}
 constexpr std::array<std::array<float, 2>, 8> airgap_params = {{
-    {0.00000f, 1},                                              // connector 0 (airgap)
-    {0.07934f + 0.0023 - 0.0075f - 0.0018f, 0.01159f},          // connector 1 (airgap2)
-    {0.07937f + 0.0016 - 0.0075f - 0.002f, 0.01155f},           // connector 2 (airgap3)
-    {0.07928f + 0.0016 - 0.0075f - 0.0027f, 0.01175f},          // connector 3 (airgap4)
-    {0.07926f + 0.0023 - 0.0075f - 0.0022f, 0.01158f},          // connector 4 (airgap1)
-    {0.00000f, 1},                                              // connector 5 (airgap)
-    {0.00000f, 1},                                              // connector 6 (airgap)
-    {0.00000f, 1},                                              // connector 7 (airgap)
+    {0.00000f, 1},                                     // connector 0 (airgap)
+    {0.07934f + 0.0023 - 0.0075f - 0.0018f, 0.01159f}, // connector 1 (airgap2)
+    {0.07937f + 0.0016 - 0.0075f - 0.002f, 0.01155f},  // connector 2 (airgap3)
+    {0.07928f + 0.0016 - 0.0075f - 0.0027f, 0.01175f}, // connector 3 (airgap4)
+    {0.07926f + 0.0023 - 0.0075f - 0.0022f, 0.01158f}, // connector 4 (airgap1)
+    {0.00000f, 1},                                     // connector 5 (airgap)
+    {0.00000f, 1},                                     // connector 6 (airgap)
+    {0.00000f, 1},                                     // connector 7 (airgap)
 }};
 
 // ============================================
@@ -428,121 +459,112 @@ constexpr std::array<std::array<float, 2>, 8> airgap_params = {{
 // ============================================
 
 // Helper to create a single LPU from virtual index
-template <size_t VirtualIdx>
-auto make_lpu_from_config() {
+template <size_t VirtualIdx> auto make_lpu_from_config() {
     constexpr auto id = LCUConfig::lpu_virtual_to_connector(VirtualIdx);
     return make_lpu<2, 1>(
         *std::get<id>(all_pwm_positive),
         *std::get<id>(all_pwm_negative),
         *std::get<id>(all_adc_vbat),
         *std::get<id>(all_adc_shunt),
-        lpu_params[id][0], lpu_params[id][1],
-        lpu_params[id][2], lpu_params[id][3]
+        lpu_params[id][0],
+        lpu_params[id][1],
+        lpu_params[id][2],
+        lpu_params[id][3]
     );
 }
 
-// Stable LPU storage per virtual index (never copied/moved).
-template <size_t VirtualIdx>
-struct LpuStorage {
+// Stable LPU storage per virtual index
+template <size_t VirtualIdx> struct LpuStorage {
     inline static auto lpu = make_lpu_from_config<VirtualIdx>();
 };
 
-template <size_t VirtualIdx>
-auto& lpu_ref() {
-    return LpuStorage<VirtualIdx>::lpu;
-}
+template <size_t VirtualIdx> auto& lpu_ref() { return LpuStorage<VirtualIdx>::lpu; }
 
 // Helper to create a single Airgap from virtual index
-template <size_t VirtualIdx>
-auto make_airgap_from_config() {
+template <size_t VirtualIdx> auto make_airgap_from_config() {
     constexpr auto id = LCUConfig::airgap_virtual_to_connector(VirtualIdx);
-    return Airgap<8>(
-        *std::get<id>(all_adc_airgap),
-        airgap_params[id][0],
-        airgap_params[id][1]
-    );
+    return Airgap<8>(*std::get<id>(all_adc_airgap), airgap_params[id][0], airgap_params[id][1]);
 }
 
-// Stable Airgap storage per virtual index (never copied/moved).
-template <size_t VirtualIdx>
-struct AirgapStorage {
+// Stable Airgap storage per virtual index
+template <size_t VirtualIdx> struct AirgapStorage {
     inline static auto airgap = make_airgap_from_config<VirtualIdx>();
 };
 
-template <size_t VirtualIdx>
-auto& airgap_ref() {
-    return AirgapStorage<VirtualIdx>::airgap;
-}
+template <size_t VirtualIdx> auto& airgap_ref() { return AirgapStorage<VirtualIdx>::airgap; }
 
 // Generate LPU tuple via pack expansion
 using LpuSeq = std::make_index_sequence<LCUConfig::ACTIVE_LPU_COUNT>;
 
-template <size_t... Is>
-auto make_lpu_tuple(std::index_sequence<Is...>) {
+template <size_t... Is> auto make_lpu_tuple(std::index_sequence<Is...>) {
     return std::forward_as_tuple(lpu_ref<Is>()...);
 }
 
 // Generate Airgap tuple via pack expansion
 using AirgapSeq = std::make_index_sequence<LCUConfig::ACTIVE_AIRGAP_COUNT>;
 
-template <size_t... Is>
-auto make_airgap_tuple(std::index_sequence<Is...>) {
+template <size_t... Is> auto make_airgap_tuple(std::index_sequence<Is...>) {
     return std::forward_as_tuple(airgap_ref<Is>()...);
 }
 
 // Generate en_buff tuple for active count
-template <size_t... Is>
-auto make_en_buff_tuple(std::index_sequence<Is...>) {
+template <size_t... Is> auto make_en_buff_tuple(std::index_sequence<Is...>) {
     return std::forward_as_tuple(*std::get<Is>(all_en_buff)...);
 }
 
 // LPU setup: creates only active LPUs using pack expansion
 inline auto lpu_tuple = make_lpu_tuple(LpuSeq{});
-inline auto en_buff_tuple = make_en_buff_tuple(std::make_index_sequence<LCUConfig::ACTIVE_EN_BUFF_COUNT>{});
+inline auto en_buff_tuple =
+    make_en_buff_tuple(std::make_index_sequence<LCUConfig::ACTIVE_EN_BUFF_COUNT>{});
 inline auto lpu_array = LpuArray(lpu_tuple, en_buff_tuple);
 
 // Airgap setup: creates only active airgaps using pack expansion
 inline auto airgap_tuple = make_airgap_tuple(AirgapSeq{});
 inline auto airgap_array = AirgapArray(airgap_tuple);
 
-template <size_t VirtualIdx>
-consteval auto lpu_overcurrent_name() {
-    if constexpr (VirtualIdx == 0) return Protections::FixedString{"LPU1 overcurrent"};
-    else if constexpr (VirtualIdx == 1) return Protections::FixedString{"LPU2 overcurrent"};
-    else if constexpr (VirtualIdx == 2) return Protections::FixedString{"LPU3 overcurrent"};
-    else if constexpr (VirtualIdx == 3) return Protections::FixedString{"LPU4 overcurrent"};
-    else if constexpr (VirtualIdx == 4) return Protections::FixedString{"LPU5 overcurrent"};
-    else if constexpr (VirtualIdx == 5) return Protections::FixedString{"LPU6 overcurrent"};
-    else if constexpr (VirtualIdx == 6) return Protections::FixedString{"LPU7 overcurrent"};
-    else if constexpr (VirtualIdx == 7) return Protections::FixedString{"LPU8 overcurrent"};
-    else if constexpr (VirtualIdx == 8) return Protections::FixedString{"LPU9 overcurrent"};
-    else return Protections::FixedString{"LPU10 overcurrent"};
+using Frame = FrameType<false, decltype(lpu_array), decltype(airgap_array)>;
+
+template <size_t VirtualIdx> consteval auto lpu_overcurrent_name() {
+    if constexpr (VirtualIdx == 0)
+        return Protections::FixedString{"LPU1 overcurrent"};
+    else if constexpr (VirtualIdx == 1)
+        return Protections::FixedString{"LPU2 overcurrent"};
+    else if constexpr (VirtualIdx == 2)
+        return Protections::FixedString{"LPU3 overcurrent"};
+    else if constexpr (VirtualIdx == 3)
+        return Protections::FixedString{"LPU4 overcurrent"};
+    else if constexpr (VirtualIdx == 4)
+        return Protections::FixedString{"LPU5 overcurrent"};
+    else if constexpr (VirtualIdx == 5)
+        return Protections::FixedString{"LPU6 overcurrent"};
+    else if constexpr (VirtualIdx == 6)
+        return Protections::FixedString{"LPU7 overcurrent"};
+    else if constexpr (VirtualIdx == 7)
+        return Protections::FixedString{"LPU8 overcurrent"};
+    else if constexpr (VirtualIdx == 8)
+        return Protections::FixedString{"LPU9 overcurrent"};
+    else
+        return Protections::FixedString{"LPU10 overcurrent"};
 }
 
-template <size_t VirtualIdx>
-consteval auto make_lpu_protection() {
+template <size_t VirtualIdx> consteval auto make_lpu_protection() {
     return Protections::protection<
         lpu_overcurrent_name<VirtualIdx>(),
-        LpuStorage<VirtualIdx>::lpu.shunt_v
-    >(Protections::Rules::range(-60.0f, 60.0f));
+        LpuStorage<VirtualIdx>::lpu.shunt_v>(Protections::Rules::range(-60.0f, 60.0f));
 }
 
-template <size_t VirtualIdx>
-struct LpuProtectionSpec {
+template <size_t VirtualIdx> struct LpuProtectionSpec {
     inline static constexpr auto spec = make_lpu_protection<VirtualIdx>();
 };
 
-template <typename Seq>
-struct ProtectionEngineBuilder;
+template <typename Seq> struct ProtectionEngineBuilder;
 
-template <size_t... Is>
-struct ProtectionEngineBuilder<std::index_sequence<Is...>> {
+template <size_t... Is> struct ProtectionEngineBuilder<std::index_sequence<Is...>> {
     using type = Protections::ProtectionEngine<LpuProtectionSpec<Is>::spec...>;
 };
 
-using AppProtectionEngine = typename ProtectionEngineBuilder<
-    std::make_index_sequence<LCUConfig::ACTIVE_LPU_COUNT>
->::type;
+using AppProtectionEngine =
+    typename ProtectionEngineBuilder<std::make_index_sequence<LCUConfig::ACTIVE_LPU_COUNT>>::type;
 
 } // namespace LCU_Slave
 

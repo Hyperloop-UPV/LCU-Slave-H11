@@ -4,12 +4,14 @@
 #include "C++Utilities/CppImports.hpp"
 #include "ControlTop/ControlTop.h"
 #include "Config/LCUHardwareConfig.hpp"
+#include "ControlShared.hpp"
 
 namespace Control {
 
 inline ControlTop model{};
 inline auto& output = model.getExternalOutputs();
 inline ControlTop::ExtU_ControlTop_T inputs{};
+inline ControlBase control{};
 
 void init();
 void deinit();

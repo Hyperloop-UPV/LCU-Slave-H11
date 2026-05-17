@@ -5,7 +5,44 @@ namespace Control {
 
 void init() { model.initialize(); }
 
-void deinit() { model.terminate(); }
+void deinit() {
+    model.terminate();
+    control.output.clear();
+}
+
+void update_control() {
+    auto& ctrl = control.output;
+    for (int i = 0; i < 4; i++)
+        ctrl.CorrienteReferencia[i] = output.CorrienteReferencia[i];
+    for (int i = 0; i < 5; i++)
+        ctrl.Estados[i] = output.Estados[i];
+    for (int i = 0; i < 3; i++)
+        ctrl.GapsLocales[i] = output.GapsLocales[i];
+    ctrl.Zz[0] = output.GapsLocales[3];
+    for (int i = 0; i < 4; i++)
+        ctrl.Voltages[i] = output.Voltages[i];
+    ctrl.Referencia = output.Referencia;
+    for (int i = 0; i < 3; i++)
+        ctrl.Fe[i] = output.Fe[i];
+    for (int i = 0; i < 4; i++)
+        ctrl.Fa[i] = output.Fa[i];
+    for (int i = 0; i < 3; i++)
+        ctrl.Ef[i] = output.Ef[i];
+    for (int i = 0; i < 3; i++)
+        ctrl.P[i] = output.P[i];
+    for (int i = 0; i < 3; i++)
+        ctrl.R[i] = output.R[i];
+    for (int i = 0; i < 3; i++)
+        ctrl.Zz[i] = output.Zz[i];
+    for (int i = 0; i < 3; i++)
+        ctrl.Fe_L[i] = output.Fe_L[i];
+    for (int i = 0; i < 8; i++)
+        ctrl.A[i] = output.A[i];
+    for (int i = 0; i < 4; i++)
+        ctrl.Ak[i] = output.Ak[i];
+    for (int i = 0; i < 3; i++)
+        ctrl.Bk[i] = output.Bk[i];
+}
 
 std::array<float, LCUConfig::ACTIVE_LPU_COUNT> current_update(
     const std::array<float, LCUConfig::ACTIVE_LPU_COUNT>& input_currents,
@@ -29,6 +66,8 @@ std::array<float, LCUConfig::ACTIVE_LPU_COUNT> current_update(
     for (size_t i = 0; i < LCUConfig::ACTIVE_LPU_COUNT; i++) {
         output_currents[i] = static_cast<float>(output.Voltages[i]);
     }
+
+    update_control();
 
     return output_currents;
 }

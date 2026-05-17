@@ -10,11 +10,7 @@ namespace LCUConfig {
 // DOF Configuration Selection
 // ============================================
 
-enum class DOFConfig : uint8_t {
-    DOF_1 = 1,
-    DOF_3 = 3,
-    DOF_5 = 5
-};
+enum class DOFConfig : uint8_t { DOF_1 = 1, DOF_3 = 3, DOF_5 = 5 };
 
 #if defined(USE_5_DOF)
 constexpr DOFConfig ACTIVE_DOF = DOFConfig::DOF_5;
@@ -37,21 +33,30 @@ constexpr uint8_t MAX_EN_BUFF_COUNT = 5;
 // ============================================
 
 constexpr uint8_t ACTIVE_LPU_COUNT = []() {
-    if constexpr (ACTIVE_DOF == DOFConfig::DOF_5) return 10;
-    else if constexpr (ACTIVE_DOF == DOFConfig::DOF_3) return 4;
-    else return 1;
+    if constexpr (ACTIVE_DOF == DOFConfig::DOF_5)
+        return 10;
+    else if constexpr (ACTIVE_DOF == DOFConfig::DOF_3)
+        return 4;
+    else
+        return 1;
 }();
 
 constexpr uint8_t ACTIVE_AIRGAP_COUNT = []() {
-    if constexpr (ACTIVE_DOF == DOFConfig::DOF_5) return 8;
-    else if constexpr (ACTIVE_DOF == DOFConfig::DOF_3) return 4;
-    else return 1;
+    if constexpr (ACTIVE_DOF == DOFConfig::DOF_5)
+        return 8;
+    else if constexpr (ACTIVE_DOF == DOFConfig::DOF_3)
+        return 4;
+    else
+        return 1;
 }();
 
 constexpr uint8_t ACTIVE_EN_BUFF_COUNT = []() {
-    if constexpr (ACTIVE_DOF == DOFConfig::DOF_5) return 5;
-    else if constexpr (ACTIVE_DOF == DOFConfig::DOF_3) return 5;
-    else return 1;
+    if constexpr (ACTIVE_DOF == DOFConfig::DOF_5)
+        return 5;
+    else if constexpr (ACTIVE_DOF == DOFConfig::DOF_3)
+        return 5;
+    else
+        return 1;
 }();
 
 // ============================================
@@ -68,20 +73,20 @@ constexpr auto lpu_virtual_to_connector(uint8_t virtual_idx) {
 
     } else if constexpr (ACTIVE_DOF == DOFConfig::DOF_3) {
         switch (virtual_idx) {
-            case 0:
-                return 3;
-                break;
-            case 1:
-                return 5;
-                break;
-            case 2:
-                return 7;
-                break;
-            case 3:
-                return 9;
-                break;
-            default:
-                ST_LIB::compile_error("Bad LPU virtual_idx");
+        case 0:
+            return 3;
+            break;
+        case 1:
+            return 5;
+            break;
+        case 2:
+            return 7;
+            break;
+        case 3:
+            return 9;
+            break;
+        default:
+            ST_LIB::compile_error("Bad LPU virtual_idx");
         }
 
     } else {
@@ -101,20 +106,20 @@ constexpr auto airgap_virtual_to_connector(uint8_t virtual_idx) {
         return virtual_idx;
     } else if constexpr (ACTIVE_DOF == DOFConfig::DOF_3) {
         switch (virtual_idx) {
-            case 0:
-                return 4;
-                break;
-            case 1:
-                return 1;
-                break;
-            case 2:
-                return 2;
-                break;
-            case 3:
-                return 3;
-                break;
-            default:
-                ST_LIB::compile_error("Bad LPU virtual_idx");
+        case 0:
+            return 4;
+            break;
+        case 1:
+            return 1;
+            break;
+        case 2:
+            return 2;
+            break;
+        case 3:
+            return 3;
+            break;
+        default:
+            ST_LIB::compile_error("Bad LPU virtual_idx");
         }
 
     } else {

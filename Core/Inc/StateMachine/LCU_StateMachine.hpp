@@ -3,39 +3,14 @@
 
 #include "ST-LIB_LOW/StateMachine/StateMachine.hpp"
 #include "Control/Control.hpp"
-#include "CommunicationsShared.hpp"
+#include "ConfigShared.hpp"
 
 namespace LCU_SM {
 
-enum class DesiredState : uint8_t { IDLE, LEVITATION, CURRENT_CONTROL, DEBUG, FAULT };
-
-/**
- * Public API
- */
 void update();
 void start();
 
-// (TODO) Clean this up
-
-inline volatile CommandPacket* command_packet = nullptr;
-inline volatile StatusPacket* status_packet = nullptr;
-#ifdef USE_SPI_ERROR
-inline volatile uint32_t* spi_error_counter = nullptr;
-#endif
-
-inline void set_command_packet(volatile CommandPacket* ptr) { command_packet = ptr; }
-inline void set_status_packet(volatile StatusPacket* ptr) { status_packet = ptr; }
-#ifdef USE_SPI_ERROR
-inline void set_spi_error_counter_ptr(volatile uint32_t* ptr) { spi_error_counter = ptr; }
-#endif
-
-// End of cleanup todo
-
-/**
- * State actions and transition guards
- */
-
-bool request_global_fault_if_needed();
+inline StateMachineBase state_machine{};
 
 bool transition_connecting_to_idle();
 bool transition_idle_to_levitation();
@@ -54,20 +29,14 @@ void on_current_control_exit();
 void on_debug_enter();
 void on_debug_exit();
 
+void cyclic_connecting();
+void cyclic_idle_check_master_fault();
 void cyclic_levitation_control_current();
 void cyclic_levitation_control_distance();
 void cyclic_current_control_current();
 void cyclic_debug_fixed_pwm();
 
 void update_sensors();
-void check_master_fault();
-DesiredState infer_desired_state();
-inline uint32_t check_master_fault_id;
-void update_status_packet_with_control_output();
-
-/**
- * State Machine definition
- */
 
 inline constexpr auto state_spi_connecting = make_state(
     SlaveState::SPI_CONNECTING,
@@ -81,20 +50,16 @@ inline constexpr auto state_idle = make_state(
     Transition{SlaveState::DEBUG, transition_idle_to_debug}
 );
 
-inline constexpr auto state_levitation = make_state(
-    SlaveState::LEVITATION,
-    Transition{SlaveState::IDLE, transition_levitation_to_idle}
-);
+inline constexpr auto state_levitation =
+    make_state(SlaveState::LEVITATION, Transition{SlaveState::IDLE, transition_levitation_to_idle});
 
 inline constexpr auto state_current_control = make_state(
     SlaveState::CURRENT_CONTROL,
     Transition{SlaveState::IDLE, transition_current_control_to_idle}
 );
 
-inline constexpr auto state_debug = make_state(
-    SlaveState::DEBUG,
-    Transition{SlaveState::IDLE, transition_debug_to_idle}
-);
+inline constexpr auto state_debug =
+    make_state(SlaveState::DEBUG, Transition{SlaveState::IDLE, transition_debug_to_idle});
 
 inline constinit auto sm_operational = []() consteval {
     auto sm = make_state_machine(
@@ -108,7 +73,10 @@ inline constinit auto sm_operational = []() consteval {
 
     using namespace std::chrono_literals;
 
+    sm.add_cyclic_action(cyclic_connecting, 500ms, state_spi_connecting);
+
     sm.add_enter_action(on_idle_enter, state_idle);
+    sm.add_cyclic_action(cyclic_idle_check_master_fault, 100ms, state_idle);
 
     sm.add_enter_action(on_levitation_enter, state_levitation);
     sm.add_exit_action(on_levitation_exit, state_levitation);
