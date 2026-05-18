@@ -113,8 +113,8 @@ void cyclic_current_control_current() {
     auto shunt_readings = LCU_Slave::lpu_array.get_shunt_readings();
     auto control_output =
         Control::current_update(shunt_readings, Control::control.input.RefCurrent);
-    for (size_t i = 0; i < LCU_Slave::lpu_array.size(); i++) {
-        if ((LCU_SM::slave_state_machine.lpu_bitmask & (1 << i)) == 0) {
+    for (size_t i = 0; i < LCUConfig::ACTIVE_LPU_COUNT; i++) {
+        if ((LCU_SM::state_machine.lpu_bitmask & (1 << i)) == 0) {
             control_output[i] = 0.0f; // Force zero output for LPUs not in current control
         }
     }
