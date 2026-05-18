@@ -113,10 +113,17 @@ void cyclic_current_control_current() {
     auto shunt_readings = LCU_Slave::lpu_array.get_shunt_readings();
     auto control_output =
         Control::current_update(shunt_readings, Control::control.input.RefCurrent);
+    for (size_t i = 0; i < LCU_Slave::lpu_array.size(); i++) {
+        if ((LCU_SM::slave_state_machine.lpu_bitmask & (1 << i)) == 0) {
+            control_output[i] = 0.0f; // Force zero output for LPUs not in current control
+        }
+    }
     LCU_Slave::lpu_array.set_out_voltages(control_output);
 }
 
-void cyclic_debug_fixed_pwm() { LCU_Slave::lpu_array.update_all(); }
+void cyclic_debug_fixed_pwm() {
+    LCU_Slave::lpu_array.set_fixed_duty_cycle_all();
+}
 
 void start() { Scheduler::register_task(100, update_sensors); }
 

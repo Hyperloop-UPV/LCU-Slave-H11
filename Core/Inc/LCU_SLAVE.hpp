@@ -20,27 +20,47 @@ void update();
 constexpr uint32_t MAX_SPI_ERRORS = 0;
 constexpr uint32_t SPI_TIMEOUT_LIMIT = 0;
 
+// ============================================
+// LED and Fault pins
+// ============================================
+
 inline constexpr auto led_operational_req =
     ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_operational);
 inline constexpr auto led_fault_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_fault);
 
-inline bool master_fault_triggered = false;
-
 inline uint32_t reset_counter = 0;
+
 inline constexpr auto master_fault_req = ST_LIB::EXTIDomain::Device(
     Pinout::master_fault,
     ST_LIB::EXTIDomain::Trigger::FALLING_EDGE,
     []() {
-        master_fault_triggered = true;
         reset_counter++;
         FAULT("Master fault detected via EXTI");
     }
 );
+
 inline constexpr auto slave_fault_req =
     ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::slave_fault);
 
+
 // ============================================
-// Hardware Configuration (always defined)
+// SPI
+// ============================================
+
+inline constexpr auto spi_req = ST_LIB::SPIDomain::
+    Device<ST_LIB::DMADomain::Stream::dma1_stream5, ST_LIB::DMADomain::Stream::dma1_stream6>(
+        ST_LIB::SPIDomain::SPIMode::SLAVE,
+        Pinout::spi_peripheral,
+        20'000'000,
+        Pinout::spi_sck,
+        Pinout::spi_miso,
+        Pinout::spi_mosi,
+        spi_conf
+    );
+inline constexpr auto slave_ready_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::spi_nss);
+
+// ============================================
+// LPU pwm
 // ============================================
 
 // Timer and PWM definitions
@@ -148,14 +168,20 @@ inline constexpr auto timer1_req = ST_LIB::TimerDomain::Timer(
     pwm_negative_10_req
 );
 
-// EN_BUFF pins
+// ============================================
+// LPU enable pins
+// ============================================
+
 inline constexpr auto en_buff_1_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_1);
 inline constexpr auto en_buff_2_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_2);
 inline constexpr auto en_buff_3_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_3);
 inline constexpr auto en_buff_4_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_4);
 inline constexpr auto en_buff_5_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::en_buff_5);
 
-// ADC buffers
+// ============================================
+// LPU and Airgap ADCs
+// ============================================
+
 inline float vbat_1_buffer = 0.0f;
 inline float vbat_2_buffer = 0.0f;
 inline float vbat_3_buffer = 0.0f;
@@ -185,7 +211,6 @@ inline float airgap_6_buffer = 0.0f;
 inline float airgap_7_buffer = 0.0f;
 inline float airgap_8_buffer = 0.0f;
 
-// ADC instances
 inline constexpr auto adc_vbat_1_req = ST_LIB::ADCDomain::ADC(Pinout::vbat_1, vbat_1_buffer);
 inline constexpr auto adc_vbat_2_req = ST_LIB::ADCDomain::ADC(Pinout::vbat_2, vbat_2_buffer);
 inline constexpr auto adc_vbat_3_req = ST_LIB::ADCDomain::ADC(Pinout::vbat_3, vbat_3_buffer);
@@ -215,18 +240,9 @@ inline constexpr auto adc_airgap_6_req = ST_LIB::ADCDomain::ADC(Pinout::airgap_6
 inline constexpr auto adc_airgap_7_req = ST_LIB::ADCDomain::ADC(Pinout::airgap_7, airgap_7_buffer);
 inline constexpr auto adc_airgap_8_req = ST_LIB::ADCDomain::ADC(Pinout::airgap_8, airgap_8_buffer);
 
-// SPI
-inline constexpr auto spi_req = ST_LIB::SPIDomain::
-    Device<ST_LIB::DMADomain::Stream::dma1_stream5, ST_LIB::DMADomain::Stream::dma1_stream6>(
-        ST_LIB::SPIDomain::SPIMode::SLAVE,
-        Pinout::spi_peripheral,
-        2000000,
-        Pinout::spi_sck,
-        Pinout::spi_miso,
-        Pinout::spi_mosi,
-        spi_conf
-    );
-inline constexpr auto slave_ready_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::spi_nss);
+// ============================================
+// Board definition
+// ============================================
 
 using BoardPolicy = ST_LIB::FaultPolicy<LCU_SM::sm_operational, LCU_SM::on_fault_enter>;
 
@@ -279,6 +295,10 @@ using Board = ST_LIB::Board<
     adc_airgap_6_req,
     adc_airgap_7_req,
     adc_airgap_8_req>;
+
+// ============================================
+// Instance references
+// ============================================
 
 inline constexpr auto& led_operational = Board::instance_of<led_operational_req>();
 inline constexpr auto& led_fault = Board::instance_of<led_fault_req>();

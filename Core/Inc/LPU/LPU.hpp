@@ -71,6 +71,10 @@ public:
         duty_cycle = duty;
     }
 
+    void set_fixed_duty_cycle() {
+        set_duty(fixed_duty_cycle);
+    }
+
     void disable() {
         set_duty(0.0f);
         pwm_negative.turn_off();
@@ -138,6 +142,10 @@ public:
             },
             this->lpus
         );
+    }
+
+    void set_fixed_duty_cycle_all() {
+        std::apply([&](auto&... lpu) { (lpu.set_fixed_duty_cycle(), ...); }, this->lpus);
     }
 };
 
