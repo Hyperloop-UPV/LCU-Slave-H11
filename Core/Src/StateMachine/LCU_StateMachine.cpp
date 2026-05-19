@@ -29,44 +29,48 @@ void on_fault_enter() {
     LCU_Slave::lpu_array.disable_all();
     LCU_Slave::slave_fault.turn_off();
     LCU_Slave::led_fault.turn_on();
-    LCU_Slave::led_operational.turn_off();
+    LCU_Slave::led_connected.turn_off();
+    LCU_Slave::led_debug.turn_off();
+    LCU_Slave::led_current_control.turn_off();
+    LCU_Slave::led_levitation.turn_off();
     Control::deinit();
 }
 
 void on_idle_enter() {
+    LCU_Slave::led_connected.turn_on();
 }
 
 void on_levitation_enter() {
-    LCU_Slave::led_operational.turn_on();
+    LCU_Slave::led_levitation.turn_on();
     Control::init();
     LCU_Slave::lpu_array.enable_all();
 }
 
 void on_levitation_exit() {
-    LCU_Slave::led_operational.turn_off();
+    LCU_Slave::led_levitation.turn_off();
     Control::deinit();
     LCU_Slave::lpu_array.disable_all();
 }
 
 void on_current_control_enter() {
-    LCU_Slave::led_operational.turn_on();
+    LCU_Slave::led_current_control.turn_on();
     Control::init();
     LCU_Slave::lpu_array.enable_all();
 }
 
 void on_current_control_exit() {
-    LCU_Slave::led_operational.turn_off();
+    LCU_Slave::led_current_control.turn_off();
     Control::deinit();
     LCU_Slave::lpu_array.disable_all();
 }
 
 void on_debug_enter() {
-    LCU_Slave::led_operational.turn_on();
+    LCU_Slave::led_debug.turn_on();
     LCU_Slave::lpu_array.enable_all();
 }
 
 void on_debug_exit() {
-    LCU_Slave::led_operational.turn_off();
+    LCU_Slave::led_debug.turn_off();
     LCU_Slave::lpu_array.disable_all();
 }
 
@@ -76,7 +80,7 @@ void update_sensors() {
 }
 
 void cyclic_connecting() {
-    LCU_Slave::led_operational.toggle();
+    LCU_Slave::led_connected.toggle();
     if (LCU_Slave::master_fault.read() == GPIO_PinState::GPIO_PIN_RESET) {
         FAULT("Master fault detected via GPIO during SPI connecting");
     }

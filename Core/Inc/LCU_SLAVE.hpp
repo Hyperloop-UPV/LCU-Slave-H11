@@ -24,9 +24,11 @@ constexpr uint32_t SPI_TIMEOUT_LIMIT = 0;
 // LED and Fault pins
 // ============================================
 
-inline constexpr auto led_operational_req =
-    ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_operational);
+inline constexpr auto led_connected_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_connected);
 inline constexpr auto led_fault_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_fault);
+inline constexpr auto led_debug_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_debug);
+inline constexpr auto led_current_control_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_current_control);
+inline constexpr auto led_levitation_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::led_levitation);
 
 inline uint32_t reset_counter = 0;
 
@@ -248,8 +250,11 @@ using BoardPolicy = ST_LIB::FaultPolicy<LCU_SM::sm_operational, LCU_SM::on_fault
 
 using Board = ST_LIB::Board<
     BoardPolicy,
-    led_operational_req,
+    led_connected_req,
     led_fault_req,
+    led_debug_req,
+    led_current_control_req,
+    led_levitation_req,
     master_fault_req,
     slave_fault_req,
     spi_req,
@@ -300,8 +305,12 @@ using Board = ST_LIB::Board<
 // Instance references
 // ============================================
 
-inline constexpr auto& led_operational = Board::instance_of<led_operational_req>();
+inline constexpr auto& led_connected = Board::instance_of<led_connected_req>();
 inline constexpr auto& led_fault = Board::instance_of<led_fault_req>();
+inline constexpr auto& led_debug = Board::instance_of<led_debug_req>();
+inline constexpr auto& led_current_control = Board::instance_of<led_current_control_req>();
+inline constexpr auto& led_levitation = Board::instance_of<led_levitation_req>();
+
 inline constexpr auto& master_fault = Board::instance_of<master_fault_req>();
 inline constexpr auto& slave_fault = Board::instance_of<slave_fault_req>();
 inline auto spi = ST_LIB::SPIDomain::SPIWrapper<spi_req>(Board::instance_of<spi_req>());
