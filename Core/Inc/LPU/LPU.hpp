@@ -49,10 +49,10 @@ public:
         // Avoid division by zero
         if (vbat_v < 5.0f) {
             set_duty(0.0f);
-            WARNING(
-                "Battery voltage too low (%.2f V) for reliable operation. Output disabled.",
-                vbat_v
-            );
+            // WARNING(
+            //     "Battery voltage too low (%.2f V) for reliable operation. Output disabled.",
+            //     vbat_v
+            // );
         }
 
         float duty = voltage / vbat_v * 100.0f;

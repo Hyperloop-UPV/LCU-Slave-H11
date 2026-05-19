@@ -16,16 +16,15 @@ void update_control() {
         ctrl.CorrienteReferencia[i] = output.CorrienteReferencia[i];
     for (int i = 0; i < 5; i++)
         ctrl.Estados[i] = output.Estados[i];
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 4; i++)
         ctrl.GapsLocales[i] = output.GapsLocales[i];
-    ctrl.Zz[0] = output.GapsLocales[3];
     for (int i = 0; i < 4; i++)
         ctrl.Voltages[i] = output.Voltages[i];
     ctrl.Referencia = output.Referencia;
     for (int i = 0; i < 3; i++)
         ctrl.Fe[i] = output.Fe[i];
     for (int i = 0; i < 4; i++)
-        ctrl.Fa[i] = output.Fa[i];
+        ctrl.Fa[i] = output.Fa;
     for (int i = 0; i < 3; i++)
         ctrl.Ef[i] = output.Ef[i];
     for (int i = 0; i < 3; i++)
@@ -35,7 +34,7 @@ void update_control() {
     for (int i = 0; i < 3; i++)
         ctrl.Zz[i] = output.Zz[i];
     for (int i = 0; i < 3; i++)
-        ctrl.Fe_L[i] = output.Fe_L[i];
+        ctrl.Fe_L[i] = output.Fe_L;
     for (int i = 0; i < 8; i++)
         ctrl.A[i] = output.A[i];
     for (int i = 0; i < 4; i++)

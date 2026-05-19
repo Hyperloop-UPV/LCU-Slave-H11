@@ -35,7 +35,7 @@ inline constexpr auto master_fault_req = ST_LIB::EXTIDomain::Device(
     ST_LIB::EXTIDomain::Trigger::FALLING_EDGE,
     []() {
         reset_counter++;
-        FAULT("Master fault detected via EXTI");
+        if (!FaultController::is_faulted()) FAULT("Master fault detected via EXTI");
     }
 );
 
@@ -535,7 +535,7 @@ template <size_t... Is> auto make_en_buff_tuple(std::index_sequence<Is...>) {
 // LPU setup: creates only active LPUs using pack expansion
 inline auto lpu_tuple = make_lpu_tuple(LpuSeq{});
 inline auto en_buff_tuple =
-    make_en_buff_tuple(std::make_index_sequence<LCUConfig::ACTIVE_EN_BUFF_COUNT>{});
+    make_en_buff_tuple(std::make_index_sequence<LCUConfig::MAX_EN_BUFF_COUNT>{});
 inline auto lpu_array = LpuArray(lpu_tuple, en_buff_tuple);
 
 // Airgap setup: creates only active airgaps using pack expansion
