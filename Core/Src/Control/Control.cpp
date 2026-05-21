@@ -48,6 +48,14 @@ std::array<float, LCUConfig::ACTIVE_LPU_COUNT> current_update(
     std::optional<float> desired_current
 ) {
 
+    if (control.input.cinema) {
+        inputs.ABSOLUTECINEMA = 1.0;
+        inputs.amp_A = control.input.cinema_current;
+    } else {
+        inputs.ABSOLUTECINEMA = 0.0;
+        inputs.amp_A = 0.0;
+    }
+
     for (size_t i = 0; i < LCUConfig::ACTIVE_LPU_COUNT; i++) {
         inputs.I_HEMS[i] = input_currents[i];
     }
