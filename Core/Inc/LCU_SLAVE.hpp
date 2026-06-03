@@ -66,17 +66,9 @@ inline constexpr auto slave_ready_req = ST_LIB::DigitalOutputDomain::DigitalOutp
 // ============================================
 
 // Timer and PWM definitions
-inline constexpr auto pwm_positive_1_req = ST_LIB::TimerPin(
-    {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm1_1, .channel = Pinout::pwm1_channel_1}
-);
-inline constexpr auto pwm_negative_1_req = ST_LIB::TimerPin(
-    {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm1_2, .channel = Pinout::pwm1_channel_2}
-);
-inline constexpr auto timer15_req = ST_LIB::TimerDomain::Timer(
-    {.request = Pinout::timer15},
-    pwm_positive_1_req,
-    pwm_negative_1_req
-);
+// pwm1_pos and pwm1_neg as digital outputs for debugging
+inline constexpr auto pwm_positive_1_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::pwm1_1);
+inline constexpr auto pwm_negative_1_req = ST_LIB::DigitalOutputDomain::DigitalOutput(Pinout::pwm1_2);
 
 inline constexpr auto pwm_positive_2_req = ST_LIB::TimerPin(
     {.af = ST_LIB::TimerAF::PWM, .pin = Pinout::pwm2_1, .channel = Pinout::pwm2_channel_1}
@@ -259,7 +251,8 @@ using Board = ST_LIB::Board<
     slave_fault_req,
     spi_req,
     slave_ready_req,
-    timer15_req,
+    pwm_positive_1_req,
+    pwm_negative_1_req,
     timer3_req,
     timer8_req,
     timer4_req,
@@ -317,7 +310,6 @@ inline auto spi = ST_LIB::SPIDomain::SPIWrapper<spi_req>(Board::instance_of<spi_
 inline constexpr auto& slave_ready = Board::instance_of<slave_ready_req>();
 
 // Timer instances
-inline auto timer15 = get_timer_instance(Board, timer15_req);
 inline auto timer3 = get_timer_instance(Board, timer3_req);
 inline auto timer8 = get_timer_instance(Board, timer8_req);
 inline auto timer4 = get_timer_instance(Board, timer4_req);
@@ -327,8 +319,8 @@ inline auto timer12 = get_timer_instance(Board, timer12_req);
 inline auto timer1 = get_timer_instance(Board, timer1_req);
 
 // PWM channels
-inline auto pwm_positive_1 = timer15.template get_pwm<pwm_positive_1_req>();
-inline auto pwm_negative_1 = timer15.template get_pwm<pwm_negative_1_req>();
+inline constexpr auto& pwm_positive_1 = Board::instance_of<pwm_positive_1_req>();
+inline constexpr auto& pwm_negative_1 = Board::instance_of<pwm_negative_1_req>();
 inline auto pwm_positive_2 = timer3.template get_pwm<pwm_positive_2_req>();
 inline auto pwm_negative_2 = timer3.template get_pwm<pwm_negative_2_req>();
 inline auto pwm_positive_3 = timer3.template get_pwm<pwm_positive_3_req>();

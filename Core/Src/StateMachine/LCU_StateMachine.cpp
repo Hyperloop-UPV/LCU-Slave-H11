@@ -98,12 +98,15 @@ void cyclic_idle_check_master_fault() {
 }
 
 void cyclic_levitation_control_current() {
+    LCU_Slave::pwm_positive_2.turn_on();
     auto shunt_readings = LCU_Slave::lpu_array.get_shunt_readings();
     auto control_output = Control::current_update(shunt_readings);
     LCU_Slave::lpu_array.set_out_voltages(control_output);
+    LCU_Slave::pwm_positive_2.turn_off();
 }
 
 void cyclic_levitation_control_distance() {
+    LCU_Slave::pwm_positive_1.turn_on();
     auto input_airgaps = LCU_Slave::airgap_array.get_readings();
 
     Control::levitation_update(
@@ -111,6 +114,7 @@ void cyclic_levitation_control_distance() {
         Control::control.input.RefZ,
         Control::control.input.ramping
     );
+    LCU_Slave::pwm_positive_1.turn_off();
 }
 
 void cyclic_current_control_current() {
