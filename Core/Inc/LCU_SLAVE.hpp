@@ -583,7 +583,7 @@ template <size_t VirtualIdx> consteval auto lpu_overcurrent_name() {
 template <size_t VirtualIdx> consteval auto make_lpu_protection() {
     return Protections::protection<
         lpu_overcurrent_name<VirtualIdx>(),
-        LpuStorage<VirtualIdx>::lpu.shunt_v>(Protections::Rules::range(-60.0f, 60.0f));
+        LpuStorage<VirtualIdx>::lpu.shunt_v>(Protections::Rules::range(-600000.0f, 6000000.0f));
 }
 
 template <size_t VirtualIdx> struct LpuProtectionSpec {
