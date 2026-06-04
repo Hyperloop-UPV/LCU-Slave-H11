@@ -114,7 +114,7 @@ constexpr auto airgap_virtual_to_connector(uint8_t virtual_idx) {
         }
 
     } else {
-        return virtual_idx;
+        return 1;
     }
 }
 
