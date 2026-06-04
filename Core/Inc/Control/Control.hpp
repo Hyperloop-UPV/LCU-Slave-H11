@@ -2,7 +2,9 @@
 #define CONTROL_HPP
 
 #include "C++Utilities/CppImports.hpp"
+extern "C" {
 #include "control.h"
+}
 #include "Config/LCUHardwareConfig.hpp"
 #include "ControlShared.hpp"
 
