@@ -2,15 +2,14 @@
 #define CONTROL_HPP
 
 #include "C++Utilities/CppImports.hpp"
-#include "ControlTop/ControlTop.h"
+#include "control.h"
 #include "Config/LCUHardwareConfig.hpp"
 #include "ControlShared.hpp"
 
 namespace Control {
 
-inline ControlTop model{};
-inline auto& output = model.getExternalOutputs();
-inline ControlTop::ExtU_ControlTop_T inputs{};
+constexpr float RAMP_RATE = 0.0002f;
+
 inline ControlBase control{};
 
 void init();

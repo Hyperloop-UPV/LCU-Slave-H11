@@ -3,76 +3,38 @@
 
 namespace Control {
 
-void init() { model.initialize(); }
+void init() { control_initialize(); }
 
 void deinit() {
-    model.terminate();
+    control_terminate();
     control.output.clear();
 }
 
-void update_control() {
+static float ramp_current = 0.0f;
+
+static void update_control() {
     auto& ctrl = control.output;
-    for (int i = 0; i < 4; i++)
-        ctrl.CorrienteReferencia[i] = output.CorrienteReferencia[i];
-    for (int i = 0; i < 5; i++)
-        ctrl.Estados[i] = output.Estados[i];
-    for (int i = 0; i < 4; i++)
-        ctrl.GapsLocales[i] = output.GapsLocales[i];
-    for (int i = 0; i < 4; i++)
-        ctrl.Voltages[i] = output.Voltages[i];
-    ctrl.Referencia = output.Referencia;
-    for (int i = 0; i < 3; i++)
-        ctrl.Fe[i] = output.Fe[i];
-    for (int i = 0; i < 4; i++)
-        ctrl.Fa[i] = output.Fa;
-    for (int i = 0; i < 3; i++)
-        ctrl.Ef[i] = output.Ef[i];
-    for (int i = 0; i < 3; i++)
-        ctrl.P[i] = output.P[i];
-    for (int i = 0; i < 3; i++)
-        ctrl.R[i] = output.R[i];
-    for (int i = 0; i < 3; i++)
-        ctrl.Zz[i] = output.Zz[i];
-    for (int i = 0; i < 3; i++)
-        ctrl.Fe_L[i] = output.Fe_L;
-    for (int i = 0; i < 8; i++)
-        ctrl.A[i] = output.A[i];
-    for (int i = 0; i < 4; i++)
-        ctrl.Ak[i] = output.Ak[i];
-    for (int i = 0; i < 3; i++)
-        ctrl.Bk[i] = output.Bk[i];
+    ctrl.Voltages[0] = control_Y.Voltage;
+    ctrl.Estados[0] = control_Y.z1;
+    ctrl.Estados[1] = control_Y.z2;
+    ctrl.Estados[2] = control_Y.z3;
+    ctrl.Referencia = control_U.Referencia;
 }
 
 std::array<float, LCUConfig::ACTIVE_LPU_COUNT> current_update(
     const std::array<float, LCUConfig::ACTIVE_LPU_COUNT>& input_currents,
     std::optional<float> desired_current
 ) {
-
-    if (control.input.cinema) {
-        inputs.ABSOLUTECINEMA = 1.0;
-        inputs.amp_A = control.input.cinema_current;
-    } else {
-        inputs.ABSOLUTECINEMA = 0.0;
-        inputs.amp_A = 0.0;
-    }
-
-    for (size_t i = 0; i < LCUConfig::ACTIVE_LPU_COUNT; i++) {
-        inputs.I_HEMS[i] = input_currents[i];
-    }
-
     if (desired_current.has_value()) {
-        inputs.CorrienteManual = desired_current.value();
-        inputs.ManualLevitacin = 0.0; // Disable levitation control, enable manual current control
+        control_DW.RateTransition_Buffer0 = desired_current.value();
     }
 
-    model.setExternalInputs(&inputs);
+    control_U.corriente_real = input_currents[0];
 
-    model.step0();
+    control_step0();
 
     std::array<float, LCUConfig::ACTIVE_LPU_COUNT> output_currents{};
-    for (size_t i = 0; i < LCUConfig::ACTIVE_LPU_COUNT; i++) {
-        output_currents[i] = static_cast<float>(output.Voltages[i]);
-    }
+    output_currents[0] = static_cast<float>(control_Y.Voltage);
 
     update_control();
 
@@ -84,20 +46,22 @@ void levitation_update(
     float reference,
     bool ramping
 ) {
+    control_U.Gap = input_airgaps[0];
 
-    for (size_t i = 0; i < LCUConfig::ACTIVE_AIRGAP_COUNT; i++) {
-        inputs.Sensores[i] = input_airgaps[i];
+    if (ramping) {
+        float error = reference - ramp_current;
+        float step = RAMP_RATE;
+        if (std::abs(error) <= step) {
+            ramp_current = reference;
+        } else {
+            ramp_current += (error > 0.0f ? step : -step);
+        }
+    } else {
+        ramp_current = reference;
     }
+    control_U.Referencia = ramp_current;
 
-    inputs.RefZ = reference;
-    inputs.ManualLevitacin = 1.0;           // Enable levitation control
-    inputs.CorrienteManual = 0.0;           // Disable manual current control
-    inputs.RampaStep = ramping ? 1.0 : 0.0; // Set ramping flag
-    inputs.enable = ramping ? 1.0 : 0.0;    // Enable ramping if requested
-
-    model.setExternalInputs(&inputs);
-
-    model.step1();
+    control_step1();
 }
 
 } // Namespace Control
