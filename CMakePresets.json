@@ -32,6 +32,13 @@
             }
         },
         {
+            "name": "control-dpc",
+            "hidden": true,
+            "cacheVariables": {
+                "USE_DPC_AI": "ON"
+            }
+        },
+        {
             "name": "dof-3dof",
             "hidden": true,
             "cacheVariables": {
@@ -194,6 +201,18 @@
             "inherits": [
                 "mcu",
                 "dof-1dof"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "board-release-1dof-dpc",
+            "displayName": "Board [REL 1DOF DPC]",
+            "inherits": [
+                "mcu",
+                "dof-1dof",
+                "control-dpc"
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
@@ -376,6 +395,10 @@
         {
             "name": "board-release-1dof",
             "configurePreset": "board-release-1dof"
+        },
+        {
+            "name": "board-release-1dof-dpc",
+            "configurePreset": "board-release-1dof-dpc"
         },
         {
             "name": "board-release-3dof",

@@ -473,18 +473,18 @@ constexpr std::array<std::array<float, 4>, 10> lpu_params = {{
 // Airgap characterization parameters (connector index 0..7)
 // {offset, slope}
 constexpr std::array<std::array<float, 2>, 8> airgap_params = {{
-    {0.00000f, 1},                                     // connector 0 (airgap)
     {-0.01406, 0.01108f}, // connector 1 (airgap1)
-    {0.06869f + 0.0029f, 0.011589f},  // connector 2 (airgap4)
-    {0.06896f + 0.0018f, 0.011569f}, // connector 3 (airgap3)
-    {0.06948f + 0.0023f, 0.011560f}, // connector 4 (airgap2)
+    {-0.01406, 0.01108f}, // connector 1 (airgap1)
+    {-0.01406, 0.01108f}, // connector 1 (airgap1)
+    {-0.01406, 0.01108f}, // connector 1 (airgap1)
+    {-0.0045194, 0.012347f}, // connector 1 (airgap1)
     // {0.07934f + 0.0023 - 0.0075f - 0.0018f, 0.01159f},
     // {0.07937f + 0.0016 - 0.0075f - 0.002f, 0.01155f},
     // {0.07928f + 0.0016 - 0.0075f - 0.0027f, 0.01175f},
     // {0.07926f + 0.0023 - 0.0075f - 0.0022f, 0.01158f},
-    {0.00000f, 1},                                     // connector 5 (airgap)
-    {0.00000f, 1},                                     // connector 6 (airgap)
-    {0.00000f, 1},                                     // connector 7 (airgap)
+    {-0.0045194, 0.012347f}, // connector 1 (airgap1)
+    {-0.01406, 0.01108f}, // connector 1 (airgap1)
+    {-0.01406, 0.01108f}, // connector 1 (airgap1)
 }};
 
 // ============================================
@@ -583,7 +583,9 @@ template <size_t VirtualIdx> consteval auto lpu_overcurrent_name() {
 template <size_t VirtualIdx> consteval auto make_lpu_protection() {
     return Protections::protection<
         lpu_overcurrent_name<VirtualIdx>(),
-        LpuStorage<VirtualIdx>::lpu.shunt_v>(Protections::Rules::range(-60.0f, 60.0f));
+        LpuStorage<VirtualIdx>::lpu.shunt_v>(
+        Protections::Rules::range(-85.0f, 85.0f)
+    );
 }
 
 template <size_t VirtualIdx> struct LpuProtectionSpec {

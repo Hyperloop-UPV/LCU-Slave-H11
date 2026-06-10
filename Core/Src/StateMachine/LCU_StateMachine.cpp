@@ -1,7 +1,13 @@
 #include "StateMachine/LCU_StateMachine.hpp"
 #include "LCU_SLAVE.hpp"
+#include "Control/dpc_ai_controller.h"
+#include "Timing/AppTiming.h"
 
 namespace LCU_SM {
+
+namespace {
+constexpr float METERS_TO_MM = 1000.0f;
+}
 
 bool transition_connecting_to_idle() { return Communications::is_connected(); }
 
@@ -42,13 +48,25 @@ void on_idle_enter() {
 
 void on_levitation_enter() {
     LCU_Slave::led_levitation.turn_on();
+#if defined(USE_DPC_AI)
+    update_sensors();
+    const auto airgap_readings = LCU_Slave::airgap_array.get_readings();
+    const auto shunt_readings = LCU_Slave::lpu_array.get_shunt_readings();
+    dpc_ai_reset(airgap_readings[0] * METERS_TO_MM, shunt_readings[0]);
+    Control::control.output.clear();
+#else
     Control::init();
+#endif
     LCU_Slave::lpu_array.enable_all();
 }
 
 void on_levitation_exit() {
     LCU_Slave::led_levitation.turn_off();
+#if defined(USE_DPC_AI)
+    Control::control.output.clear();
+#else
     Control::deinit();
+#endif
     LCU_Slave::lpu_array.disable_all();
 }
 
@@ -75,8 +93,10 @@ void on_debug_exit() {
 }
 
 void update_sensors() {
+    const uint32_t start = app_timing_cycles();
     LCU_Slave::airgap_array.update();
     LCU_Slave::lpu_array.update_all();
+    Control::control.output.Timing.sensor_update_us = app_timing_elapsed_cycles(start);
 }
 
 void cyclic_connecting() {
@@ -111,6 +131,62 @@ void cyclic_levitation_control_distance() {
         Control::control.input.RefZ,
         Control::control.input.ramping
     );
+}
+
+void cyclic_levitation_control_dpc() {
+#if defined(USE_DPC_AI)
+    static uint32_t last_start_cycles = 0U;
+    const uint32_t start = app_timing_cycles();
+    if (last_start_cycles != 0U) {
+        const uint32_t period_cycles = start - last_start_cycles;
+        if (period_cycles < (SystemCoreClock / 100U)) {
+            app_timing_record_u32(
+                &Control::control.output.Timing.dpc_period_us,
+                &Control::control.output.Timing.dpc_period_max_us,
+                period_cycles
+            );
+        } else {
+            Control::control.output.Timing.dpc_period_us = 0U;
+        }
+    }
+    last_start_cycles = start;
+
+    const auto input_airgaps = LCU_Slave::airgap_array.get_readings();
+    const auto shunt_readings = LCU_Slave::lpu_array.get_shunt_readings();
+    const auto vbat_readings = LCU_Slave::lpu_array.get_vbat_readings();
+
+    const float airgap_mm = input_airgaps[0] * METERS_TO_MM;
+    const float target_mm = Control::control.input.RefZ * METERS_TO_MM;
+    const dpc_ai_output_t dpc_output =
+        dpc_ai_step(airgap_mm, target_mm, shunt_readings[0], vbat_readings[0]);
+    Control::control.output.Timing.dpc_inference_us = dpc_ai_last_inference_us();
+    Control::control.output.Timing.dpc_inference_max_us = dpc_ai_max_inference_us();
+
+    std::array<float, LCUConfig::ACTIVE_LPU_COUNT> duties{};
+    if (!dpc_output.ok) {
+        LCU_Slave::lpu_array.set_duties(duties);
+        app_timing_record_u32(
+            &Control::control.output.Timing.dpc_total_us,
+            &Control::control.output.Timing.dpc_total_max_us,
+            app_timing_elapsed_cycles(start)
+        );
+        FAULT("DPC AI controller failed");
+        return;
+    }
+
+    duties[0] = dpc_output.duty_percent;
+    LCU_Slave::lpu_array.set_duties(duties);
+
+    Control::control.output.Voltages[0] = dpc_output.voltage_v;
+    Control::control.output.GapsLocales[0] = input_airgaps[0];
+    Control::control.output.Estados[0] = dpc_output.duty_percent;
+    Control::control.output.Referencia = Control::control.input.RefZ;
+    app_timing_record_u32(
+        &Control::control.output.Timing.dpc_total_us,
+        &Control::control.output.Timing.dpc_total_max_us,
+        app_timing_elapsed_cycles(start)
+    );
+#endif
 }
 
 void cyclic_current_control_current() {

@@ -33,6 +33,7 @@ void cyclic_connecting();
 void cyclic_idle_check_master_fault();
 void cyclic_levitation_control_current();
 void cyclic_levitation_control_distance();
+void cyclic_levitation_control_dpc();
 void cyclic_current_control_current();
 void cyclic_debug_fixed_pwm();
 
@@ -80,8 +81,12 @@ inline constinit auto sm_operational = []() consteval {
 
     sm.add_enter_action(on_levitation_enter, state_levitation);
     sm.add_exit_action(on_levitation_exit, state_levitation);
+#if defined(USE_DPC_AI)
+    sm.add_cyclic_action(cyclic_levitation_control_dpc, 500us, state_levitation);
+#else
     sm.add_cyclic_action(cyclic_levitation_control_current, 500us, state_levitation);
     sm.add_cyclic_action(cyclic_levitation_control_distance, 1000us, state_levitation);
+#endif
 
     sm.add_enter_action(on_current_control_enter, state_current_control);
     sm.add_exit_action(on_current_control_exit, state_current_control);

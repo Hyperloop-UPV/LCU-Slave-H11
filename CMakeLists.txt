@@ -9,6 +9,11 @@ set(STLIB_DIR ${CMAKE_CURRENT_LIST_DIR}/deps/ST-LIB)
 set(LD_SCRIPT  ${STLIB_DIR}/STM32H723ZGTX_FLASH.ld)
 set(CONTROL_DIR ${CMAKE_CURRENT_LIST_DIR}/deps/LCU-Control-H11)
 set(SHARED_DIR  ${CMAKE_CURRENT_LIST_DIR}/deps/LCU-Shared-H11)
+set(X_CUBE_AI_DIR ${CMAKE_CURRENT_LIST_DIR}/X-CUBE-AI)
+set(X_CUBE_AI_MIDDLEWARE_DIR ${CMAKE_CURRENT_LIST_DIR}/Middlewares/ST/AI)
+set(X_CUBE_AI_RUNTIME_LIB
+  ${X_CUBE_AI_MIDDLEWARE_DIR}/Lib/GCC/STM32H7/NetworkRuntime1020_CM7_GCC.a
+)
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
@@ -26,6 +31,7 @@ endif()
 option(USE_ETHERNET "Enable ethernet peripheral" OFF)
 option(USE_5_DOF "Build for 5-DOF configuration" OFF)
 option(USE_3_DOF "Build for 3-DOF configuration" OFF)
+option(USE_DPC_AI "Enable the 1DOF X-CUBE-AI DPC controller" OFF)
 option(TARGET_NUCLEO "Targets the STM32H723 Nucleo development board" OFF)
 option(USE_CCACHE "Use ccache if available" ON)
 if(NOT DEFINED ENABLE_LTO)
@@ -50,7 +56,17 @@ message(STATUS "Template project: CMAKE_CROSSCOMPILING = ${CMAKE_CROSSCOMPILING}
 message(STATUS "Template project: USE_ETHERNET         = ${USE_ETHERNET}")
 message(STATUS "Template project: USE_5_DOF            = ${USE_5_DOF}")
 message(STATUS "Template project: USE_3_DOF            = ${USE_3_DOF}")
+message(STATUS "Template project: USE_DPC_AI           = ${USE_DPC_AI}")
 message(STATUS "Template project: TARGET_NUCLEO        = ${TARGET_NUCLEO}")
+
+set(USE_1_DOF_BUILD OFF)
+if(NOT USE_5_DOF AND NOT USE_3_DOF)
+  set(USE_1_DOF_BUILD ON)
+endif()
+if(USE_DPC_AI AND NOT USE_1_DOF_BUILD)
+  message(FATAL_ERROR "USE_DPC_AI is only supported for 1DOF builds")
+endif()
+message(STATUS "Template project: USE_1_DOF_BUILD      = ${USE_1_DOF_BUILD}")
 
 add_subdirectory(${STLIB_DIR})
 message(STATUS "Using ST-LIB target: ${STLIB_LIBRARY}")
@@ -63,6 +79,9 @@ file(GLOB_RECURSE SOURCE_HPP  ${CMAKE_SOURCE_DIR}/Core/*.hpp)
 # Add Simulink-generated control code
 file(GLOB CONTROL_C ${CONTROL_DIR}/*.c ${CONTROL_DIR}/*.cpp ${CONTROL_DIR}/**/*.c ${CONTROL_DIR}/**/*.cpp)
 file(GLOB CONTROL_H ${CONTROL_DIR}/*.h ${CONTROL_DIR}/**/*.h)
+
+file(GLOB X_CUBE_AI_C CONFIGURE_DEPENDS ${X_CUBE_AI_DIR}/App/*.c)
+file(GLOB X_CUBE_AI_H CONFIGURE_DEPENDS ${X_CUBE_AI_DIR}/App/*.h)
 
 
 file(GLOB_RECURSE METADATA_SOURCES
@@ -108,12 +127,15 @@ if(CMAKE_CROSSCOMPILING)
     ${SOURCE_HPP}
     ${CONTROL_C}
     ${CONTROL_H}
+    $<$<BOOL:${USE_DPC_AI}>:${X_CUBE_AI_C}>
+    $<$<BOOL:${USE_DPC_AI}>:${X_CUBE_AI_H}>
 
     $<$<BOOL:${CMAKE_CROSSCOMPILING}>:${STLIB_DIR}/startup_stm32h723zgtx.s>
   )
 
   target_link_libraries(${EXECUTABLE} PRIVATE
     ${STLIB_LIBRARY}
+    $<$<BOOL:${USE_DPC_AI}>:${X_CUBE_AI_RUNTIME_LIB}>
   )
 
   set_target_properties(${EXECUTABLE} PROPERTIES
@@ -129,6 +151,7 @@ if(CMAKE_CROSSCOMPILING)
     $<$<BOOL:${USE_5_DOF}>:USE_5_DOF>
     $<$<BOOL:${USE_3_DOF}>:USE_3_DOF>
     $<$<AND:$<NOT:$<BOOL:${USE_5_DOF}>>,$<NOT:$<BOOL:${USE_3_DOF}>>>:USE_1_DOF>
+    $<$<BOOL:${USE_DPC_AI}>:USE_DPC_AI>
     $<IF:$<BOOL:${TARGET_NUCLEO}>,NUCLEO,BOARD>
     $<IF:$<BOOL:${TARGET_NUCLEO}>,HSE_VALUE=8000000,HSE_VALUE=25000000>
   )
@@ -160,6 +183,8 @@ if(CMAKE_CROSSCOMPILING)
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc
     ${SHARED_DIR}/Inc
     ${CONTROL_DIR}
+    $<$<BOOL:${USE_DPC_AI}>:${X_CUBE_AI_DIR}/App>
+    $<$<BOOL:${USE_DPC_AI}>:${X_CUBE_AI_MIDDLEWARE_DIR}/Inc>
   )
 
   target_link_options(${EXECUTABLE} PRIVATE

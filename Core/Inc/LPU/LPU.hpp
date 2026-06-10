@@ -134,11 +134,28 @@ public:
         );
     }
 
+    auto get_vbat_readings() const {
+        return std::apply(
+            [](auto&... lpu) { return std::array<float, LpuCount>{lpu.vbat_v...}; },
+            this->lpus
+        );
+    }
+
     void set_out_voltages(const std::array<float, LpuCount>& voltages) {
         std::apply(
             [&](auto&... lpu) {
                 size_t idx = 0;
                 ((lpu.set_out_voltage(voltages[idx++])), ...);
+            },
+            this->lpus
+        );
+    }
+
+    void set_duties(const std::array<float, LpuCount>& duties) {
+        std::apply(
+            [&](auto&... lpu) {
+                size_t idx = 0;
+                ((lpu.set_duty(duties[idx++])), ...);
             },
             this->lpus
         );
