@@ -458,33 +458,29 @@ inline auto all_en_buff =
 // LPU characterization parameters (connector index 0..9)
 // {vbat_offset, vbat_slope, shunt_offset, shunt_slope}
 constexpr std::array<std::array<float, 4>, 10> lpu_params = {{
-    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 0 (lpu)
-    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 1 (lpu)
-    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 2 (lpu)
-    {0.0f, 1.0f, 331.5f, -193.5f}, // connector 3 (lpu3) (control 2)
-    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 4 (lpu)
-    {0.0f, 1.0f, 317.0f, -184.8f}, // connector 5 (lpu7) (control 4)
-    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 6 (lpu)
-    {0.0f, 1.0f, 329.0f, -193.4f}, // connector 7 (lpu4) (control 3)
-    {0.0f, 1.0f, 0.0f, 1.0f},      // connector 8 (lpu)
-    {0.0f, 1.0f, 317.0f, -185.1f}, // connector 9 (lpu1) (control 1)
+    {0.0f, 1.0f, 336.54f, -190.81f},
+    {0.0f, 1.0f, 342.09f, -193.42f},
+    {0.0f, 1.0f, 217.76f, -131.50f},
+    {0.0f, 1.0f, 341.87f, -199.52f},
+    {0.0f, 1.0f, -325.46f, 190.02f},
+    {0.0f, 1.0f, 0.0f, 1.0f},
+    {0.0f, 1.0f, 0.0f, 1.0f},
+    {0.0f, 1.0f, 0.0f, 1.0f},
+    {0.0f, 1.0f, 0.0f, 1.0f},
+    {0.0f, 1.0f, 0.0f, 1.0f},
 }};
 
 // Airgap characterization parameters (connector index 0..7)
 // {offset, slope}
 constexpr std::array<std::array<float, 2>, 8> airgap_params = {{
-    {0.00000f, 1},                                     // connector 0 (airgap)
-    {0.07008f + 0.0022f, 0.011557f}, // connector 1 (airgap1)
-    {0.06869f + 0.0029f, 0.011589f},  // connector 2 (airgap4)
-    {0.06896f + 0.0018f, 0.011569f}, // connector 3 (airgap3)
-    {0.06948f + 0.0023f, 0.011560f}, // connector 4 (airgap2)
-    // {0.07934f + 0.0023 - 0.0075f - 0.0018f, 0.01159f},
-    // {0.07937f + 0.0016 - 0.0075f - 0.002f, 0.01155f},
-    // {0.07928f + 0.0016 - 0.0075f - 0.0027f, 0.01175f},
-    // {0.07926f + 0.0023 - 0.0075f - 0.0022f, 0.01158f},
-    {0.00000f, 1},                                     // connector 5 (airgap)
-    {0.00000f, 1},                                     // connector 6 (airgap)
-    {0.00000f, 1},                                     // connector 7 (airgap)
+    {0.0f, 1.0f},
+    {0.0f, 1.0f},
+    {0.0f, 1.0f},
+    {0.0f, 1.0f},
+    {0.0f, 1.0f},
+    {0.0f, 1.0f},
+    {0.0f, 1.0f},
+    {0.0f, 1.0f}
 }};
 
 // ============================================

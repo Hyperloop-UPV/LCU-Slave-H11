@@ -2,15 +2,15 @@
 #define CONTROL_HPP
 
 #include "C++Utilities/CppImports.hpp"
-#include "ControlTop/ControlTop.h"
+#include "C_5DOF_EL.h"
 #include "Config/LCUHardwareConfig.hpp"
 #include "ControlShared.hpp"
 
 namespace Control {
 
-inline ControlTop model{};
+inline C_5DOF_EL model{};
 inline auto& output = model.getExternalOutputs();
-inline ControlTop::ExtU_ControlTop_T inputs{};
+inline C_5DOF_EL::ExtU_C_5DOF_EL_T inputs{};
 inline ControlBase control{};
 
 void init();
