@@ -25,6 +25,9 @@ void init() {
         Control::control,
         Communications::report
     );
+
+    Watchdog::watchdog_time = std::chrono::milliseconds(1);
+    Watchdog::start();
 }
 
 void update() {
@@ -39,6 +42,7 @@ void update() {
         HAL_Delay(100); // Delay in case more faults are coming in rapidly
         HAL_NVIC_SystemReset();
     }
+    Watchdog::refresh();
 }
 
 } // Namespace LCU_Slave
