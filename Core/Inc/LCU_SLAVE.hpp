@@ -17,8 +17,8 @@ namespace LCU_Slave {
 void init();
 void update();
 
-constexpr uint32_t MAX_SPI_ERRORS = 0;
-constexpr uint32_t SPI_TIMEOUT_LIMIT = 0;
+constexpr uint32_t MAX_SPI_ERRORS = 1;
+constexpr uint32_t SPI_TIMEOUT_LIMIT = 10000;
 
 // ============================================
 // LED and Fault pins
