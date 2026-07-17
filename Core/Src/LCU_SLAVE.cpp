@@ -7,6 +7,7 @@ void init() {
     AppProtectionEngine::initialize();
 
     slave_fault.turn_on();
+    master_fault.turn_on();
     spi.set_software_nss(false);
     slave_ready.turn_off();
 
@@ -26,7 +27,7 @@ void init() {
         Communications::report
     );
 
-    Watchdog::watchdog_time = std::chrono::milliseconds(1);
+    Watchdog::watchdog_time = std::chrono::milliseconds(100);
     Watchdog::start();
 }
 
@@ -39,7 +40,7 @@ void update() {
     AppProtectionEngine::evaluate();
     Diagnostics::Hub::flush();
     if (reset_counter >= 5) {
-        HAL_Delay(100); // Delay in case more faults are coming in rapidly
+        HAL_Delay(50); // Delay in case more faults are coming in rapidly
         HAL_NVIC_SystemReset();
     }
     Watchdog::refresh();
