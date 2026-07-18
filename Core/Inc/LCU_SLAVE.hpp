@@ -458,16 +458,16 @@ inline auto all_en_buff =
 // LPU characterization parameters (connector index 0..9)
 // {vbat_offset, vbat_slope, shunt_offset, shunt_slope}
 constexpr std::array<std::array<float, 4>, 10> lpu_params = {{
-    {0.0f, 1.0f, 336.54f, -190.81f},
+    {0.0f, 1.0f, 341.61f, -193.48f},
     {0.0f, 1.0f, 342.09f, -193.42f},
-    {0.0f, 1.0f, 217.76f, -131.50f},
+    {0.0f, 1.0f, 220.89f, -137.41f},
     {0.0f, 1.0f, 341.87f, -199.52f},
     {0.0f, 1.0f, -325.46f, 190.02f},
-    {0.0f, 1.0f, 342.09f, -193.42f},
-    {0.0f, 1.0f, 342.09f, -193.42f},
-    {0.0f, 1.0f, 342.09f, -193.42f},
-    {0.0f, 1.0f, 342.09f, -193.42f},
-    {0.0f, 1.0f, 342.09f, -193.42f},
+    {0.0f, 1.0f, 355.98f, -207.98f},
+    {0.0f, 1.0f, 336.90f, -197.29f},
+    {0.0f, 1.0f, 317.28f, -186.41f},
+    {0.0f, 1.0f, 318.36f, -186.06f},
+    {0.0f, 1.0f, 318.69f, -186.41f},
 }};
 
 // Airgap characterization parameters (connector index 0..7)
