@@ -24,17 +24,17 @@ void update_control() {
     for (int i = 0; i < 8; i++)
         ctrl.A[i] = static_cast<float>(output.A[i]);
 
-    auto& dw = model.get_corriente().get_dw();
-    ctrl.PI_Integrator_HEMS[0] = static_cast<float>(dw.Integrator_DSTATE);
-    ctrl.PI_Integrator_HEMS[1] = static_cast<float>(dw.Integrator_DSTATE_e);
-    ctrl.PI_Integrator_HEMS[2] = static_cast<float>(dw.Integrator_DSTATE_o);
-    ctrl.PI_Integrator_HEMS[3] = static_cast<float>(dw.Integrator_DSTATE_m);
-    ctrl.PI_Integrator_EMS[0] = static_cast<float>(dw.Integrator_DSTATE_a);
-    ctrl.PI_Integrator_EMS[1] = static_cast<float>(dw.Integrator_DSTATE_f);
-    ctrl.PI_Integrator_EMS[2] = static_cast<float>(dw.Integrator_DSTATE_j);
-    ctrl.PI_Integrator_EMS[3] = static_cast<float>(dw.Integrator_DSTATE_k);
-    ctrl.PI_Integrator_EMS[4] = static_cast<float>(dw.Integrator_DSTATE_b);
-    ctrl.PI_Integrator_EMS[5] = static_cast<float>(dw.Integrator_DSTATE_j2);
+    // auto& dw = model.get_corriente().get_dw();
+    // ctrl.PI_Integrator_HEMS[0] = static_cast<float>(dw.Integrator_DSTATE);
+    // ctrl.PI_Integrator_HEMS[1] = static_cast<float>(dw.Integrator_DSTATE_e);
+    // ctrl.PI_Integrator_HEMS[2] = static_cast<float>(dw.Integrator_DSTATE_o);
+    // ctrl.PI_Integrator_HEMS[3] = static_cast<float>(dw.Integrator_DSTATE_m);
+    // ctrl.PI_Integrator_EMS[0] = static_cast<float>(dw.Integrator_DSTATE_a);
+    // ctrl.PI_Integrator_EMS[1] = static_cast<float>(dw.Integrator_DSTATE_f);
+    // ctrl.PI_Integrator_EMS[2] = static_cast<float>(dw.Integrator_DSTATE_j);
+    // ctrl.PI_Integrator_EMS[3] = static_cast<float>(dw.Integrator_DSTATE_k);
+    // ctrl.PI_Integrator_EMS[4] = static_cast<float>(dw.Integrator_DSTATE_b);
+    // ctrl.PI_Integrator_EMS[5] = static_cast<float>(dw.Integrator_DSTATE_j2);
 }
 
 std::array<float, LCUConfig::ACTIVE_LPU_COUNT> current_update(
@@ -83,6 +83,9 @@ void levitation_update(
 
     inputs.RefZ = reference;
     inputs.ManualLevitacin = 1.0;
+    inputs.Ganancia_HEMS = 2;
+    inputs.Ganancia_EMS = 1;
+    inputs.Vibra = false;
     for (int i = 0; i < 10; i++)
         inputs.CorrienteManual[i] = 0.0;
     inputs.RampaStep = ramping ? 1.0 : 0.0;
