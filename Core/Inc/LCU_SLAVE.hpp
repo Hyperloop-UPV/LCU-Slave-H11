@@ -473,10 +473,10 @@ constexpr std::array<std::array<float, 4>, 10> lpu_params = {{
 // Airgap characterization parameters (connector index 0..7)
 // {offset, slope}
 constexpr std::array<std::array<float, 2>, 8> airgap_params = {{
-    {0.054879f, 0.007718f},
-    {0.054907f, 0.007727f},
-    {0.054392f, 0.008010f},
-    {0.054827f, 0.007731f},
+    {0.057879f, 0.007718f},
+    {0.057907f, 0.007727f},
+    {0.057892f, 0.007720f},
+    {0.057827f, 0.007731f},
     {0.059664f, 0.007755f},
     {0.059712f, 0.007834f},
     {0.059815f, 0.007751f},
